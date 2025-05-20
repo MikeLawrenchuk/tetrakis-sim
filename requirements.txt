@@ -1,0 +1,2 @@
+networkx==3.3         # graph construction & queries
+matplotlib==3.9.0     # (optional) quick 3-D visual tests
