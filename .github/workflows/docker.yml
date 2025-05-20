@@ -31,5 +31,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest
+        tags: ghcr.io/mikelawrenchuk/tetrakis-sim:latest   # ← all lower-case
 
