@@ -41,8 +41,14 @@ def main(no_defect: bool):
     print("Degrees at defect vertices:", *degs)
     print("Edges:", G.number_of_edges())
 
+
 if __name__ == "__main__":
+  
     p = argparse.ArgumentParser()
-    p.add_argument("--none", action="store_true",
-                   help="build a flat sheet (no wedge removed)")
+    p.add_argument(
+        "--none",
+        action="store_true",
+        dest="no_defect",          # <── add this line
+        help="Build a flat sheet (no wedge removed).",
+    )
     main(**vars(p.parse_args()))

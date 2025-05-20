@@ -4,3 +4,4 @@ __pycache__/
 /.venv/
 template.py
 template.py
+.DS_Store
