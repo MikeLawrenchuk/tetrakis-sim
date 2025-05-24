@@ -1,52 +1,7 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.so
-
-# Python virtual environments and config
-.venv/
-.env
-.python-version
-
-# Jupyter notebooks auto-save checkpoints (ignore these, but keep notebooks tracked)
-notebooks/.ipynb_checkpoints/
-
-# Test output, coverage, and docs
-tests/__pycache__/
-htmlcov/
-coverage.*
-*.cover
-*.py,cover
-.cache
-nosetests.xml
-coverage.xml
-*.log
-docs/_build/
-docs/_site/
-*.pot
-*.mo
-
-# MacOS and system files
-.DS_Store
-
-# VSCode and JetBrains IDE folders (optional, uncomment if you use)
-# .vscode/
-# .idea/
-
-# Editor swap files
-*.swp
-*.swo
-
-# Build artifacts
-build/
-dist/
 *.egg-info/
-.eggs/
-
-# Distribution archives
-*.tar.gz
-*.zip
-
-# Project-specific files you don’t want in Git
+/.venv/
 template.py
-
+template.py
+.DS_Store

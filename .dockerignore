@@ -1,37 +1,6 @@
-# Python bytecode and caches
 __pycache__/
 *.py[cod]
-*.so
-
-# Python virtual environments and local config
-.venv/
-.env
-.python-version
-
-# Jupyter notebooks and auto-save checkpoints (EXCLUDE ALL FOR NOW)
-notebooks/
-notebooks/.ipynb_checkpoints/
-
-# Test output, coverage, and docs
-tests/
-docs/
-htmlcov/
-
-# Git
-.git
-.gitignore
-
-# macOS and other system files
-.DS_Store
-
-# Editor/IDE settings (uncomment if using these editors)
-# .vscode/
-# .idea/
-
-# Editor swap files
-*.swp
-*.swo
-
-# Project-specific files you don’t want in Docker
+*.egg-info/
+/.venv/
+/.git
 template.py
-
