@@ -5,3 +5,15 @@ __pycache__/
 template.py
 template.py
 .DS_Store
+
+# Ignore Python environment/version files
+.python-version
+
+# Ignore Jupyter auto-save checkpoints
+notebooks/.ipynb_checkpoints/
+
+# Optionally ignore all untracked notebook files you don’t want in Git
+ notebooks/Untitled2.ipynb
+ notebooks/explore_tetrakis.txt
+ notebooks/tetrakis_geodesic_demo.txt
+
