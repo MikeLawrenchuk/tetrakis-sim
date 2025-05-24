@@ -1,5 +1,4 @@
-# ---------- build stage ----------
-FROM python:3.12-slim AS build
+FROM python:3.11.9-slim AS build
 
 # Workdir & non-root user
 ARG USER=app
@@ -24,5 +23,5 @@ USER ${USER}
 # Expose port for Jupyter (optional, needed only if running notebook in container)
 EXPOSE 8888
 
-# Default: start a bash shell, so you can override with scripts or Jupyter as needed
+# Default: start a bash shell
 CMD ["bash"]
