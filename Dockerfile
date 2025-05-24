@@ -15,7 +15,7 @@ COPY lattice_sim.py .
 COPY README.md .               
 COPY tetrakis_sim/ ./tetrakis_sim/
 COPY scripts/ ./scripts/
-COPY notebooks/ ./notebooks/
+# COPY notebooks/ ./notebooks/
 
 # Switch to non-root
 USER ${USER}
