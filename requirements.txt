@@ -1,2 +1,4 @@
 networkx==3.3         # graph construction & queries
 matplotlib==3.9.0     # (optional) quick 3-D visual tests
+jupyter==1.0.0             # for notebook support
+ipywidgets==8.1.2       # for notebook interactivity (optional, but nice)

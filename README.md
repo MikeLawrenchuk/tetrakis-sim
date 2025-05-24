@@ -38,6 +38,28 @@ the coloured wave‑front plot that shows how geodesics deviate around the
 | `geodesic_bending_demo.ipynb` | Notebook created automatically; visualises geodesic bending. |
 | `.gitignore`, `.dockerignore` | Keep caches and scratch files out of Git / Docker context. |
 
+
 ## License
 
 Distributed under the MIT License; see `LICENSE` for full text.
+
+
+## Project Roadmap
+
+This project will evolve in the following stages:
+
+1. **2D Lattice and Defect Modeling:** Build and visualize simple 2D tetrakis-square grids with configurable defects.
+2. **3D Lattice (“Floors”):** Extend to 3D grids; support vertical connections and visualize slices or full 3D structures.
+3. **Wave and FFT Simulations:** Implement wave propagation and fast Fourier transforms on the grids; visualize dynamics and frequency spectra.
+4. **Advanced Defects (e.g., Black Holes):** Model complex defects and curvature, including analogues of black holes and event horizons.
+5. **Extensible Physics & User Customization:** Enable easy selection of dimensions, physics models, and defect types via CLI or config file.
+6. **Visualization & Interactive Exploration:** Integrate robust plotting and, optionally, interactive widgets or notebooks for exploration.
+
+**Follow the [issues](./issues) and [project board](./projects) for current work and future ideas!**
+
+
+## Interactive Demos
+
+See example notebooks in [`notebooks/`](./notebooks/).  
+Try running them with:
+
