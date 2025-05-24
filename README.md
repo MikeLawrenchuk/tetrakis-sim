@@ -1,65 +1,119 @@
+
+
+
+
 # Tetrakis‑Sim: Degree‑19 Spacetime Sandbox
 
-This repository contains a *minimal* discrete‑geometry playground based on
+This repository contains a **modular discrete‑geometry playground** based on
 the tetrakis‑square tiling, using **row/column** uniqueness constraints only
-(degree 19 per vertex).  It lets you:
+(degree 19 per vertex). You can:
 
-* build finite rectangular patches of the lattice;
-* inject local curvature by removing a 45° wedge (one intra‑cell edge);
-* explore geodesic bending visually (see `geodesic_bending_demo.ipynb`);
-* run everything reproducibly inside a slim Docker container.
+* Build finite rectangular patches of the lattice (2D for now)
+* Inject local curvature by removing a 45° wedge (one intra‑cell edge)
+* Explore geodesic bending visually via included Jupyter notebooks
+* Run everything reproducibly inside a slim Docker container
+* Use a modern CLI for automation, scripting, and experiments
 
-## Quick start
+---
+
+## Quick Start
+
+### Clone and Build
 
 ```bash
-# clone & enter
 git clone https://github.com/MikeLawrenchuk/tetrakis-sim.git
 cd tetrakis-sim
-
-# build and run the container
 docker build -t tetrakis-sim .
-docker run --rm tetrakis-sim                  # with curvature defect
-docker run --rm tetrakis-sim python lattice_sim.py --none   # flat sheet
+````
+
+### Run CLI (inside Docker)
+
+```bash
+# Basic run (15x15, wedge defect)
+docker run --rm -e PYTHONPATH=/home/app tetrakis-sim python scripts/run_sim.py --size 15 --defect wedge
+
+# Flat sheet (no defect)
+docker run --rm -e PYTHONPATH=/home/app tetrakis-sim python scripts/run_sim.py --size 15 --defect none
 ```
 
-## Demo notebook
+### Run Jupyter Notebooks (inside Docker)
 
-Open **`geodesic_bending_demo.ipynb`** in JupyterLab / VS Code to reproduce
-the coloured wave‑front plot that shows how geodesics deviate around the
-+45° wedge placed at the centre of a 30×30 window.
+```bash
+docker run --rm -p 8888:8888 -e PYTHONPATH=/home/app tetrakis-sim \
+    jupyter notebook --notebook-dir=/home/app/notebooks --ip=0.0.0.0 --allow-root
+```
 
-## File layout
+Then open [http://localhost:8888](http://localhost:8888) in your browser.
 
-| file | role |
-|------|------|
-| `Dockerfile` | Slim Python 3.12 image, sets up non‑root user `app`. |
-| `lattice_sim.py` | CLI driver to build the graph and print degree / edge count. |
-| `requirements.txt` | Pinned runtime deps (`networkx`, `matplotlib`). |
-| `geodesic_bending_demo.ipynb` | Notebook created automatically; visualises geodesic bending. |
-| `.gitignore`, `.dockerignore` | Keep caches and scratch files out of Git / Docker context. |
+### Run Locally (with venv)
 
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+python scripts/run_sim.py --size 15 --defect wedge
+jupyter notebook
+```
+
+---
+
+## Notebooks & Interactive Demos
+
+See notebooks in [`notebooks/`](./notebooks/):
+
+* `explore_tetrakis.ipynb` — Play with lattice construction and graph properties
+* `geodesic_bending_demo.ipynb` — (Legacy) Minimal geodesic bending demo
+* `tetrakis_geodesic_demo.ipynb` — **Recommended shareable demo**: modular, up-to-date
+
+Open these in Jupyter or VS Code for interactive exploration.
+
+---
+
+## File Layout
+
+| File / Folder        | Role                                                              |
+| -------------------- | ----------------------------------------------------------------- |
+| `Dockerfile`         | Slim Python 3.12 image, sets up non‑root user `app`.              |
+| `requirements.txt`   | Pinned runtime deps (`networkx`, `matplotlib`, `jupyter`).        |
+| `lattice_sim.py`     | (Legacy) Original script for building/printing degree/edge count. |
+| `tetrakis_sim/`      | **Modular package**: lattice, defects, CLI, physics, plotting     |
+| `scripts/run_sim.py` | Entrypoint for CLI (calls `main()` from modular package)          |
+| `notebooks/`         | Interactive Jupyter notebooks                                     |
+| `.gitignore`         | Keep caches/scratch files out of Git                              |
+
+---
 
 ## License
 
 Distributed under the MIT License; see `LICENSE` for full text.
 
+---
 
 ## Project Roadmap
 
 This project will evolve in the following stages:
 
-1. **2D Lattice and Defect Modeling:** Build and visualize simple 2D tetrakis-square grids with configurable defects.
-2. **3D Lattice (“Floors”):** Extend to 3D grids; support vertical connections and visualize slices or full 3D structures.
-3. **Wave and FFT Simulations:** Implement wave propagation and fast Fourier transforms on the grids; visualize dynamics and frequency spectra.
-4. **Advanced Defects (e.g., Black Holes):** Model complex defects and curvature, including analogues of black holes and event horizons.
-5. **Extensible Physics & User Customization:** Enable easy selection of dimensions, physics models, and defect types via CLI or config file.
-6. **Visualization & Interactive Exploration:** Integrate robust plotting and, optionally, interactive widgets or notebooks for exploration.
+1. **2D Lattice and Defect Modeling**
+2. **3D Lattice (“Floors”)**
+3. **Wave and FFT Simulations**
+4. **Advanced Defects (e.g., Black Holes)**
+5. **Extensible Physics & User Customization**
+6. **Visualization & Interactive Exploration**
 
 **Follow the [issues](./issues) and [project board](./projects) for current work and future ideas!**
 
+---
 
 ## Interactive Demos
 
-See example notebooks in [`notebooks/`](./notebooks/).  
-Try running them with:
+See the latest example notebooks in [`notebooks/`](./notebooks/).
+To try them, use Jupyter or Docker as described above.
+
+---
+
+```
+
+---
+
 
