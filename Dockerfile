@@ -1,5 +1,4 @@
-# ---------- build stage ----------
-FROM python:3.12-slim AS build
+FROM python:3.11.9-slim AS build
 
 # Workdir & non-root user
 ARG USER=app
@@ -11,13 +10,18 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Application code
-COPY lattice_sim.py .
+# Application code: copy all relevant directories and files
+COPY lattice_sim.py .         
+COPY README.md .               
+COPY tetrakis_sim/ ./tetrakis_sim/
+COPY scripts/ ./scripts/
+# COPY notebooks/ ./notebooks/
 
 # Switch to non-root
 USER ${USER}
 
-# ---------- runtime stage ----------
-# (still slim, identical image here; separate stage ready for
-#  multi-stage builds if the project grows)
-CMD ["python", "lattice_sim.py"]
+# Expose port for Jupyter (optional, needed only if running notebook in container)
+# EXPOSE 8888
+
+# Default: start a bash shell
+CMD ["bash"]
