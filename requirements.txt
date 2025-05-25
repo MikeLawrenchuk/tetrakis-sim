@@ -1,2 +1,6 @@
-networkx==3.3         # graph construction & queries
-matplotlib==3.9.0     # (optional) quick 3-D visual tests
+networkx==3.3          # graph construction & queries
+matplotlib==3.9.0      # 2D/3D quick visual tests (static)
+plotly>=5.0.0          # interactive 3D visualization
+kaleido>=0.2.1         # plotly static image export (png/svg/pdf)
+numpy>=1.25
+pytest
