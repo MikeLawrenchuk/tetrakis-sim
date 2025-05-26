@@ -50,3 +50,11 @@ dist/
 # Project-specific files you don’t want in Git
 template.py
 
+# Lattice simulation outputs and images
+*.html
+*.png
+lattice_floors/
+
+# Jupyter notebook temp/untitled files
+notebooks/Untitled*.ipynb
+
