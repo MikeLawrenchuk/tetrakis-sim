@@ -68,6 +68,33 @@ See notebooks in [`notebooks/`](./notebooks/):
 * `explore_tetrakis.txt` — Play with lattice construction and graph properties
 * `tetrakis_geodesic_demo.txt` — Modular, up-to-date geodesic demo
 
+## Example Notebook: Black Hole Waves & Frequency Analysis
+
+See [`tetrakis_blackhole_waves.ipynb`](notebooks/tetrakis_blackhole_waves.ipynb) for a complete, step-by-step demonstration of:
+
+- Building and visualizing a 3D tetrakis lattice (with multiple floors/layers)
+- Creating and analyzing black hole defects (removed nodes, event horizon)
+- Running discrete wave simulations and observing how waves interact with defects
+- Plotting amplitude heatmaps and animated wave propagation
+- Computing and plotting FFT spectra for individual nodes and for entire floors
+- Mapping dominant frequencies across the lattice
+
+This notebook serves as both a demo and a template for further experiments.  
+You can copy the notebook, adjust parameters, or use any part in your own research.
+
+---
+
+**To run the notebook:**
+1. Make sure your dependencies (`matplotlib`, `networkx`, `numpy`, `plotly`, `kaleido`, etc.) are installed (see `requirements.txt`).
+2. Launch JupyterLab or Jupyter Notebook in your project root.
+3. Open `notebooks/tetrakis_blackhole_waves.ipynb` (or whatever filename you choose).
+
+*All simulation and plotting code uses the modular functions in the `tetrakis_sim` package.*
+
+---
+
+
+
 Open these in Jupyter or VS Code for interactive exploration.
 
 *Notebooks are versioned for documentation and reproducibility, but **not included in Docker images**.*

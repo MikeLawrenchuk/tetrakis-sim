@@ -11,6 +11,7 @@ def plot_floor_with_circle(
     radius: float,
     highlight_nodes: Optional[List[Any]] = None,
     boundary_nodes: Optional[List[Any]] = None,
+    data: Optional[dict] = None,
     figsize: Tuple[int, int] = (7, 7),
     show: bool = True,
     save: Optional[str] = None
@@ -18,7 +19,7 @@ def plot_floor_with_circle(
     """
     Plots a single floor (z layer) of a 3D tetrakis lattice, optionally
     highlighting black hole (removed) nodes, the event horizon, and overlaying
-    an analytical event horizon circle.
+    an analytical event horizon circle. Supports node coloring via 'data'.
     """
     nodes_on_layer = [n for n in G if n[2] == z]
     H = G.subgraph(nodes_on_layer)
@@ -27,8 +28,18 @@ def plot_floor_with_circle(
         offset = 0.18 * "ABCD".index(q)
         return (r + offset, c + offset)
     pos = {n: node_pos(n) for n in nodes_on_layer}
+
     plt.figure(figsize=figsize)
     nx.draw(H, pos, node_size=60, with_labels=False, alpha=0.7)
+
+    # Overlay color by data/amplitude if provided
+    if data:
+        nodes = list(H.nodes)
+        xs, ys = zip(*[pos[n] for n in nodes])
+        vals = [data.get(n, 0.0) for n in nodes]
+        sc = plt.scatter(xs, ys, c=vals, cmap='coolwarm', s=120, zorder=20)
+        plt.colorbar(sc, label="Wave amplitude")
+
     # Plot removed (black hole) nodes as empty circles
     if highlight_nodes:
         nodes = [n for n in highlight_nodes if len(n) > 2 and n[2] == z]
@@ -45,6 +56,7 @@ def plot_floor_with_circle(
         if nodes:
             xs, ys = zip(*[pos[n] for n in nodes])
             plt.scatter(xs, ys, s=200, c='gold', edgecolors='red', label='Event Horizon', zorder=11)
+
     # Overlay event horizon as a circle
     r0, c0, _ = center
     circle = plt.Circle((r0, c0), radius, color='gold', fill=False, linewidth=2, linestyle='--', alpha=0.6)
@@ -57,6 +69,7 @@ def plot_floor_with_circle(
     if show:
         plt.show()
     plt.close()
+
 
 def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8,8), save: Optional[str]=None):
     """
@@ -90,20 +103,29 @@ def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8
     plt.close()
 
 # Optionally: Add stub for FFT and wave plotting
-def plot_fft(data):
+
+
+def plot_fft(freq, spectrum, node=None, values=None):
     """
-    Placeholder for FFT plotting.
+    Plot the FFT amplitude spectrum. Optionally shows the time series.
     """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    freq = np.fft.fftfreq(len(data))
-    fft_vals = np.fft.fft(data)
-    plt.figure()
-    plt.plot(freq, np.abs(fft_vals))
-    plt.title("FFT Spectrum")
+    plt.figure(figsize=(8, 3))
+    plt.subplot(1, 2, 1)
+    plt.plot(freq, spectrum)
+    plt.title(f"FFT amplitude{f' (node={node})' if node else ''}")
     plt.xlabel("Frequency")
     plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.subplot(1, 2, 2)
+    if values is not None:
+        plt.plot(values)
+        plt.title("Node value over time")
+        plt.xlabel("Time step")
+        plt.ylabel("Value")
+        plt.grid(True)
+    plt.tight_layout()
     plt.show()
+
 
 def plot_wave(time_steps, node_values, node=None):
     """
