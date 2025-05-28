@@ -1,149 +1,155 @@
+# Tetrakis-Sim: Discrete Geometry & Wave Physics
+
+**Author:** Mike Lawrenchuk
+**Project:** [tetrakis-sim](https://github.com/MikeLawrenchuk/tetrakis-sim)
 
 ---
 
-# Tetrakis‑Sim: Degree‑19 Spacetime Sandbox
+## Overview
 
-This repository contains a **modular discrete‑geometry playground** based on the tetrakis‑square tiling, using **row/column** uniqueness constraints only (degree 19 per vertex).
+*Tetrakis-Sim* is a research-grade Python toolkit for discrete geometry, wave simulation, and spectral analysis on 2D/3D tetrakis-square lattices with advanced defects (black holes, wedges, event horizons).
 
-You can:
+**Features:**
 
-* Build finite rectangular patches of the lattice (2D and 3D)
-* Inject local curvature by removing a 45° wedge (one intra‑cell edge)
-* Explore geodesic bending visually via included Jupyter notebooks
-* Run everything reproducibly inside a slim Docker container
-* Use a modern CLI for automation, scripting, and experiments
+* Modular 2D/3D lattice and defect construction
+* Physics engine: wave propagation (FDTD) on arbitrary graphs
+* Black hole/event horizon and wedge defect modeling
+* Batch CLI for automated parameter sweeps
+* FFT, frequency mapping, mean spectrum, and advanced visualization
+* Professional workflow: Docker, reproducibility, batch logs, metadata
+* Interactive analysis notebooks and publication-ready plots
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1. Clone and Build
+### 1. **Install (dev mode for notebooks/CLI)**
 
 ```bash
-git clone https://github.com/MikeLawrenchuk/tetrakis-sim.git
-cd tetrakis-sim
-docker build -t tetrakis-sim .
+pip install -e .
+pip install -r requirements-dev.txt  # for pandas, jupyter, etc.
+```
+
+### 2. **Run a Simulation with the CLI**
+
+```bash
+python scripts/run_batch.py --size 11 --radius 2.5 --layers 7 --steps 50
+```
+
+**CLI arguments:**
+
+* `--size`: Lattice width/height (NxN)
+* `--radius`: Black hole radius
+* `--layers`: Number of 3D floors
+* `--steps`: Time steps
+* `--c`, `--dt`, `--damping`: Physics options
+* `--defect_type`: `blackhole`, `wedge`, `none`
+* `--outdir`: Output directory (default: `batch_cli_output`)
+* `--prefix`: Custom prefix for all output files
+
+See all options:
+
+```bash
+python scripts/run_batch.py --help
 ```
 
 ---
 
-### 2. Run CLI (inside Docker)
+### 3. **Batch Parameter Sweeps (bash/zsh)**
 
 ```bash
-# Basic run (15x15, wedge defect)
-docker run --rm -e PYTHONPATH=/home/app tetrakis-sim python scripts/run_sim.py --size 15 --defect wedge
-
-# Flat sheet (no defect)
-docker run --rm -e PYTHONPATH=/home/app tetrakis-sim python scripts/run_sim.py --size 15 --defect none
+for size in 7 9 11; do
+  for radius in 1.5 2.5 3.5; do
+    python scripts/run_batch.py --size $size --radius $radius --layers 5 --steps 40
+  done
+done
 ```
-
-> **Note:**
-> The Docker image is optimized for CLI/scripts only.
-> **Jupyter notebooks are NOT included in the Docker image.**
-> To use Jupyter, follow the local instructions below.
 
 ---
 
-### 3. Run Locally (with venv) — Recommended for Notebooks
+### 4. **Output Files**
+
+Saved to `batch_cli_output/` (or as specified):
+
+* `*_fft_node(NODE).png`: FFT spectrum/time-series plot
+* `*_spectrum.csv`: FFT data (frequency, amplitude)
+* `*_metadata.json`: Metadata (parameters, node, dominant frequency, etc.)
+
+---
+
+### 5. **Analyze Batch Results in a Notebook**
+
+**See:**
+
+* `notebooks/analyze_batch_outputs.ipynb`
+
+```python
+import glob, pandas as pd, numpy as np
+
+csv_files = glob.glob('batch_cli_output/*_spectrum.csv')
+summary = []
+for f in csv_files:
+    import re
+    m = re.search(r'size(\d+)_radius([0-9.]+)', f)
+    size = int(m.group(1)); radius = float(m.group(2))
+    data = np.loadtxt(f, delimiter=',', skiprows=1)
+    freq, spectrum = data[:,0], data[:,1]
+    dominant_freq = freq[np.argmax(spectrum)]
+    summary.append({"file": f, "size": size, "radius": radius, "dominant_freq": dominant_freq})
+df = pd.DataFrame(summary).sort_values(["size","radius"])
+df.to_csv('batch_cli_output/batch_fft_summary.csv', index=False)
+print(df)
+```
+
+Plot dominant frequency vs. radius:
+
+```python
+for size in df['size'].unique():
+    subset = df[df['size']==size]
+    plt.plot(subset['radius'], subset['dominant_freq'], marker='o', label=f"size={size}")
+plt.xlabel("Black hole radius"); plt.ylabel("Dominant frequency"); plt.legend(); plt.show()
+```
+
+---
+
+## Example: Advanced Run with Metadata
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt -r requirements-dev.txt
-python scripts/run_sim.py --size 15 --defect wedge
-jupyter notebook
+python scripts/run_batch.py --size 13 --radius 3.5 --layers 7 --steps 100 --c 1.5 --dt 0.15 --damping 0.02 --prefix "my_experiment"
 ```
 
-* **requirements.txt** — core dependencies (for running code/scripts)
-* **requirements-dev.txt** — notebook & developer-only dependencies
+---
+
+## Features
+
+* **Reproducible:** Every run saves all parameters and dominant frequencies as metadata.
+* **Flexible:** Parameter sweeps, custom physics, and batch runs are easy and automated.
+* **Publication-ready:** All output is compatible with pandas, matplotlib, and can be included in scientific papers, reports, or slides.
+* **Professional CLI:** Friendly help, error-checking, and clear outputs.
+* **Docker-ready:** Build a reproducible environment for any machine with a single command.
 
 ---
 
-## 📓 Notebooks & Interactive Demos
+## Documentation
 
-See notebooks in [`notebooks/`](./notebooks/):
-
-* `03-tetrakis-3d-demo.ipynb` — Modern 3D lattice construction and visualization
-* `explore_tetrakis.txt` — Play with lattice construction and graph properties
-* `tetrakis_geodesic_demo.txt` — Modular, up-to-date geodesic demo
-
-## Example Notebook: Black Hole Waves & Frequency Analysis
-
-See [`tetrakis_blackhole_waves.ipynb`](notebooks/tetrakis_blackhole_waves.ipynb) for a complete, step-by-step demonstration of:
-
-- Building and visualizing a 3D tetrakis lattice (with multiple floors/layers)
-- Creating and analyzing black hole defects (removed nodes, event horizon)
-- Running discrete wave simulations and observing how waves interact with defects
-- Plotting amplitude heatmaps and animated wave propagation
-- Computing and plotting FFT spectra for individual nodes and for entire floors
-- Mapping dominant frequencies across the lattice
-
-This notebook serves as both a demo and a template for further experiments.  
-You can copy the notebook, adjust parameters, or use any part in your own research.
+* **Source code:** See `tetrakis_sim/`
+* **Notebooks:** See `notebooks/analyze_batch_outputs.ipynb` for batch data analysis.
+* **CLI script:** See `scripts/run_batch.py --help`
 
 ---
 
-**To run the notebook:**
-1. Make sure your dependencies (`matplotlib`, `networkx`, `numpy`, `plotly`, `kaleido`, etc.) are installed (see `requirements.txt`).
-2. Launch JupyterLab or Jupyter Notebook in your project root.
-3. Open `notebooks/tetrakis_blackhole_waves.ipynb` (or whatever filename you choose).
+## Contributing / Collaboration
 
-*All simulation and plotting code uses the modular functions in the `tetrakis_sim` package.*
+Pull requests, issues, and collaborations are welcome!
+If you’re interested in research, teaching, or publishing with this code, please open an issue or contact [Mike Lawrenchuk](mailto:your-email@example.com).
 
 ---
 
-
-
-Open these in Jupyter or VS Code for interactive exploration.
-
-*Notebooks are versioned for documentation and reproducibility, but **not included in Docker images**.*
-
----
-
-## 📁 File Layout
-
-| File / Folder          | Role                                                          |
-| ---------------------- | ------------------------------------------------------------- |
-| `Dockerfile`           | Slim Python 3.11 image, sets up non‑root user `app`           |
-| `requirements.txt`     | Pinned runtime deps (`networkx`, `matplotlib`)                |
-| `requirements-dev.txt` | Dev/notebook-only deps (`jupyter`, `ipywidgets`)              |
-| `tetrakis_sim/`        | **Modular package**: lattice, defects, CLI, physics, plotting |
-| `scripts/`             | Entrypoints for CLI (calls `main()` from modular package)     |
-| `notebooks/`           | Interactive Jupyter notebooks                                 |
-| `tests/`               | Unit tests (pytest)                                           |
-| `.gitignore`           | Keeps caches/scratch files out of Git                         |
-
----
-
-## 🛣️ Project Roadmap
-
-* **2D Lattice and Defect Modeling**
-* **3D Lattice (“Floors”)**
-* **Wave and FFT Simulations**
-* **Advanced Defects (e.g., Black Holes)**
-* **Extensible Physics & User Customization**
-* **Visualization & Interactive Exploration**
-
-See [issues](./issues) and [project board](./projects) for ideas and progress.
-
----
-
-## 📄 License
+## License
 
 Distributed under the MIT License; see `LICENSE` for details.
-
 ---
 
-## 💬 Interactive Demos
-
-Explore the latest example notebooks in [`notebooks/`](./notebooks/).
-To try them, use Jupyter locally as described above.
+*For questions, collaboration, or scientific consulting, open an issue or contact the author!*
 
 ---
-
-**For questions, bug reports, or ideas, open an [issue](./issues) or start a [discussion](./discussions)!**
-
----
-
-
