@@ -46,7 +46,7 @@ def plot_3d_graph_with_edges(G: nx.Graph) -> None:
     plt.tight_layout()
     plt.show()
 
-    plt.savefig("prime_helix_demo.png", dpi=180, bbox_inches="tight")
+    fig.savefig("prime_helix_demo.png", dpi=180, bbox_inches="tight")
     plt.tight_layout()
     plt.show()
 
