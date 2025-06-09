@@ -36,13 +36,17 @@ def plot_3d_graph_with_edges(G: nx.Graph) -> None:
         xs, ys, zs = zip(*verts)
 
         # scatter vertices
-        ax.scatter(xs, ys, zs, s=NODE_SZ, color=C_MAP(k), depthshade=True)
+        ax.scatter(xs, ys, zs, s=NODE_SZ, color=C_MAP(k), depthshade=True, picker=True, label=f"ring {k}",  )
 
         # draw outline
-        ax.plot(xs, ys, zs, linewidth=0.6, color=C_MAP(k), alpha=0.7)
+        ax.plot(xs, ys, zs, linewidth=0.6, color=C_MAP(k), alpha=0.7, antialiased=True, )
 
     ax.set_title("Prime-helix demo")
     ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+    plt.tight_layout()
+    plt.show()
+
+    plt.savefig("prime_helix_demo.png", dpi=180, bbox_inches="tight")
     plt.tight_layout()
     plt.show()
 
