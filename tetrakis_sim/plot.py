@@ -222,3 +222,34 @@ def plot_lattice_3d(
         fig.write_html(filename_html)
     if filename_img:
         fig.write_image(filename_img)
+
+
+# ---------------------------------------------------------------------------
+# Generic 3-D scatter for any graph that stores Cartesian positions
+# ---------------------------------------------------------------------------
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D      # noqa: F401 – registers 3-D proj
+
+def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
+    """
+    Scatter-plot any NetworkX graph whose nodes carry
+    ``'pos' = (x, y, z)`` coordinates.
+
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with a ``pos`` attribute on every node.
+    node_size : int, optional
+        Marker size, by default 10.
+    title : str, optional
+        Plot title.
+    """
+    xs, ys, zs = zip(*(G.nodes[n]["pos"] for n in G))
+    fig = plt.figure(figsize=(6, 5))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(xs, ys, zs, s=node_size)
+    ax.set_title(title)
+    ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+    plt.show()
+
