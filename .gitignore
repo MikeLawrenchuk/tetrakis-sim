@@ -58,3 +58,17 @@ lattice_floors/
 # Jupyter notebook temp/untitled files
 notebooks/Untitled*.ipynb
 
+# Lattice simulation outputs and images
+*.html
+
+# Ignore every PNG by default…
+*.png
+
+# …but keep screenshots and reference images that live under docs/img/
+!docs/img/*.png
+
+lattice_floors/
+
+# Jupyter notebook temp/untitled files
+notebooks/Untitled*.ipynb
+
