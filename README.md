@@ -21,6 +21,25 @@
 
 ---
 
+## Prime-Helix Demo 🌐
+
+*Tetrakis-Sim* now includes a generator that winds the prime numbers into a
+3-D helix of taxicab “diamond” rings.  A single helper call draws the graph:
+
+```python
+from tetrakis_sim import add_prime_helix, plot_3d_graph
+import networkx as nx
+
+G = nx.Graph()
+add_prime_helix(G, n_rings=12, dtheta=0.14, pitch=2.0)  # 12 prime rings
+plot_3d_graph(G, node_size=16, title="Prime-helix (12 rings)")
+
+
+<p align="center">
+  <img src="docs/img/prime_helix_demo.png" alt="Prime-helix demo" width="400">
+</p>
+
+
 ## Quick Start
 
 ### 1. **Install (dev mode for notebooks/CLI)**
