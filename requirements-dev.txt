@@ -1,4 +1,19 @@
-# For local dev and notebooks ONLY:
+# requirements-dev.txt
+#
+# Extra tools for local development, notebooks, plotting, and tests.
+# These are *not* required for end-users who only need the core library.
+
+# ── Plotting / visualisation ───────────────────────────────────────────────
+matplotlib>=3.9,<4.0      # static 2-D / 3-D plots
+plotly>=5,<6              # interactive 3-D visualisation
+kaleido>=0.2.1            # static export for Plotly (png/svg/pdf)
+
+# ── Testing ────────────────────────────────────────────────────────────────
+pytest>=8,<9              # test runner
+
+# ── Notebook stack ─────────────────────────────────────────────────────────
 jupyter==1.0.0
 ipywidgets==8.1.2
-pandas
+
+# ── Data analysis helpers (optional) ───────────────────────────────────────
+pandas>=2.2,<3.0
