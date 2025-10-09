@@ -2,11 +2,13 @@
 
 import argparse
 import os
-import numpy as np
 import json
 from datetime import datetime
+
+import numpy as np
+
 from tetrakis_sim.lattice import build_sheet
-from tetrakis_sim.defects import apply_blackhole_defect
+from tetrakis_sim.defects import apply_defect, find_event_horizon
 from tetrakis_sim.physics import run_wave_sim, run_fft
 from tetrakis_sim.plot import plot_fft
 
@@ -41,11 +43,33 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
 
     # Build lattice and apply defect
     G = build_sheet(size=args.size, dim=3, layers=args.layers)
-    bh_center = (args.size//2, args.size//2, args.layers//2)
-    removed_nodes = apply_blackhole_defect(G, bh_center, args.radius)
-    z = args.layers // 2
-    nodes_on_layer = [n for n in G if n[2] == z]
-    initial_node = nodes_on_layer[len(nodes_on_layer)//2]
+    center = (args.size // 2, args.size // 2, args.layers // 2)
+    defect_kwargs = {}
+    if args.defect_type == "blackhole":
+        defect_kwargs = {"center": center, "radius": args.radius}
+    elif args.defect_type == "wedge":
+        defect_kwargs = {"center": center[:2], "layer": center[2]}
+
+    G, removed_nodes = apply_defect(
+        G, defect_type=args.defect_type, return_removed=True, **defect_kwargs
+    )
+
+    if args.defect_type == "blackhole":
+        horizon_nodes = find_event_horizon(G, removed_nodes, args.radius, center)
+    else:
+        horizon_nodes = []
+
+    z = center[2]
+    nodes_on_layer = [n for n in G if len(n) > 2 and n[2] == z]
+    if not nodes_on_layer:
+        raise RuntimeError("No nodes remain on the central layer after defect application")
+
+    # Kick the node closest to the geometric centre that survived the defect
+    def _distance_sq(node):
+        r, c, _, _ = node
+        return (r - center[0]) ** 2 + (c - center[1]) ** 2
+
+    initial_node = min(nodes_on_layer, key=_distance_sq)
     initial_data = {initial_node: 1.0}
 
     history = run_wave_sim(
@@ -69,7 +93,15 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
 
     # Save run metadata as JSON
     metadata = vars(args).copy()
-    metadata['kick_node'] = str(initial_node)
+    metadata['kick_node'] = initial_node
+    metadata['effective_dt'] = history.dt
+    metadata['stability_adjusted'] = history.metadata.get('stability_adjusted', False)
+    metadata['stability_limit'] = history.metadata.get('stability_limit')
+    metadata['removed_node_count'] = len(removed_nodes)
+    if removed_nodes:
+        metadata['removed_nodes'] = removed_nodes
+    if horizon_nodes:
+        metadata['event_horizon_nodes'] = horizon_nodes
     metadata['csv_filename'] = csv_filename
     metadata['plot_filename'] = plot_filename
     metadata['run_id'] = run_id
