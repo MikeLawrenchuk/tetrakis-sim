@@ -1,8 +1,96 @@
 # tetrakis_sim/plot.py
 
-import matplotlib.pyplot as plt
-import networkx as nx
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import warnings
 from typing import Any, List, Optional, Tuple
+
+import networkx as nx
+
+
+# ---------------------------------------------------------------------------
+# Optional plotting backends
+# ---------------------------------------------------------------------------
+
+_matplotlib_pkg = importlib.util.find_spec("matplotlib")
+_mpl_spec = None
+if _matplotlib_pkg is not None:
+    _mpl_spec = importlib.util.find_spec("matplotlib.pyplot")
+
+if _mpl_spec is not None:
+    plt = importlib.import_module("matplotlib.pyplot")
+else:  # pragma: no cover - only triggered when matplotlib is missing
+    warnings.warn(
+        "matplotlib is not installed; tetrakis_sim plotting functions will act as no-ops.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+    class _AxesStub:
+        def add_patch(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+    class _MatplotlibStub:
+        """Minimal stub providing the attributes used in this module."""
+
+        def Circle(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
+            return {"args": _args, "kwargs": _kwargs}
+
+        def gca(self) -> _AxesStub:
+            return _AxesStub()
+
+    plt = _MatplotlibStub()
+
+_HAS_MATPLOTLIB = _mpl_spec is not None
+
+if _HAS_MATPLOTLIB:
+    _mplot3d_spec = importlib.util.find_spec("mpl_toolkits.mplot3d")
+    if _mplot3d_spec is not None:
+        importlib.import_module("mpl_toolkits.mplot3d")
+
+
+_plotly_pkg = importlib.util.find_spec("plotly")
+_plotly_spec = None
+if _plotly_pkg is not None:
+    _plotly_spec = importlib.util.find_spec("plotly.graph_objects")
+
+if _plotly_spec is not None:
+    go = importlib.import_module("plotly.graph_objects")
+else:  # pragma: no cover - only triggered when plotly is missing
+    warnings.warn(
+        "plotly is not installed; 3-D plotting helpers will act as no-ops.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+    class _PlotlyTraceStub:
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            self.args = _args
+            self.kwargs = _kwargs
+
+    class _PlotlyFigureStub:
+        def add_trace(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def update_layout(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def write_html(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+        def write_image(self, *_args: Any, **_kwargs: Any) -> None:
+            return None
+
+    class _PlotlyStub:
+        Figure = _PlotlyFigureStub
+        Scatter3d = _PlotlyTraceStub
+        Layout = _PlotlyTraceStub
+
+    go = _PlotlyStub()
+
+_HAS_PLOTLY = _plotly_spec is not None
 
 def plot_floor_with_circle(
     G: nx.Graph,
@@ -21,6 +109,9 @@ def plot_floor_with_circle(
     highlighting black hole (removed) nodes, the event horizon, and overlaying
     an analytical event horizon circle. Supports node coloring via 'data'.
     """
+    if not _HAS_MATPLOTLIB:
+        return None
+
     nodes_on_layer = [n for n in G if n[2] == z]
     H = G.subgraph(nodes_on_layer)
     def node_pos(node):
@@ -76,6 +167,9 @@ def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8
     Plot a general 2D or 3D lattice (shows only present nodes/edges).
     Data can be a dict mapping nodes to color/size.
     """
+    if not _HAS_MATPLOTLIB:
+        return None
+
     plt.figure(figsize=figsize)
     pos = None
     if all(len(n) == 3 for n in G.nodes):  # 2D: (r, c, q)
@@ -109,6 +203,9 @@ def plot_fft(freq, spectrum, node=None, values=None):
     """
     Plot the FFT amplitude spectrum. Optionally shows the time series.
     """
+    if not _HAS_MATPLOTLIB:
+        return None
+
     plt.figure(figsize=(8, 3))
     plt.subplot(1, 2, 1)
     plt.plot(freq, spectrum)
@@ -132,6 +229,9 @@ def plot_wave(time_steps, node_values, node=None):
     Plot a time-series for a single node in a wave simulation.
     node_values should be a dict mapping node to array of values.
     """
+    if not _HAS_MATPLOTLIB:
+        return None
+
     if node is None:
         node = list(node_values.keys())[0]
     plt.plot(time_steps, node_values[node])
@@ -140,8 +240,6 @@ def plot_wave(time_steps, node_values, node=None):
     plt.ylabel("Value")
     plt.show()
 
-
-import plotly.graph_objects as go
 
 def plot_lattice_3d(
     G,
@@ -163,8 +261,11 @@ def plot_lattice_3d(
         filename_html: if set, saves the plot as interactive HTML
         filename_img: if set, saves as static PNG/SVG (requires kaleido)
         marker_size: integer, size of plotted markers
-        title: plot title
+    title: plot title
     """
+    if not _HAS_PLOTLY:
+        return None
+
     # Prepare data
     x, y, z, color, symbol = [], [], [], [], []
     for node in G.nodes:
@@ -228,9 +329,6 @@ def plot_lattice_3d(
 # Generic 3-D scatter for any graph that stores Cartesian positions
 # ---------------------------------------------------------------------------
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D      # noqa: F401 – registers 3-D proj
-
 def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
     """
     Scatter-plot any NetworkX graph whose nodes carry
@@ -245,6 +343,9 @@ def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
     title : str, optional
         Plot title.
     """
+    if not _HAS_MATPLOTLIB:
+        return None
+
     xs, ys, zs = zip(*(G.nodes[n]["pos"] for n in G))
     fig = plt.figure(figsize=(6, 5))
     ax = fig.add_subplot(111, projection="3d")

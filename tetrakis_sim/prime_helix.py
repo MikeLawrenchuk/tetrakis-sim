@@ -13,13 +13,43 @@ add_prime_helix(G, n_rings=100, dtheta=math.radians(1), pitch=1.5)
 
 from __future__ import annotations
 import math
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 import networkx as nx
-from sympy import primerange
 
 __all__ = ["add_prime_helix"]
+
+
+# ---------------------------------------------------------------------------
+# Prime sequence helper
+# ---------------------------------------------------------------------------
+
+def _first_primes(count: int) -> List[int]:
+    """Return the first ``count`` prime numbers."""
+
+    if count <= 0:
+        return []
+
+    primes: List[int] = []
+    candidate = 2
+
+    while len(primes) < count:
+        is_prime = True
+        limit = math.isqrt(candidate)
+        for p in primes:
+            if p > limit:
+                break
+            if candidate % p == 0:
+                is_prime = False
+                break
+
+        if is_prime:
+            primes.append(candidate)
+
+        candidate += 1 if candidate == 2 else 2  # skip even numbers > 2
+
+    return primes
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +103,7 @@ def add_prime_helix(
     ring : int                          ring index (0 = p₂)
     prime_radius : int                  prime radius (2, 3, 5, …)
     """
-    primes = list(primerange(2, 10**8))[:n_rings]
+    primes = _first_primes(n_rings)
 
     for k, p in enumerate(primes):
         verts = _rotated_lifted(p, k * dtheta, k * pitch)
