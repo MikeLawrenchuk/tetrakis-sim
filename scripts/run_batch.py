@@ -22,6 +22,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
 """
     )
     parser.add_argument('--size', type=int, default=9, help='Lattice width/height (NxN)')
+    parser.add_argument('--dim', type=int, default=3, choices=[2, 3], help='Lattice dimension (2 or 3)')
     parser.add_argument('--layers', type=int, default=5, help='Number of lattice layers (z)')
     parser.add_argument('--radius', type=float, default=2.5, help='Black hole radius')
     parser.add_argument('--steps', type=int, default=40, help='Number of simulation time steps')
@@ -42,13 +43,19 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     print(f"Parameters: {vars(args)}")
 
     # Build lattice and apply defect
-    G = build_sheet(size=args.size, dim=3, layers=args.layers)
-    center = (args.size // 2, args.size // 2, args.layers // 2)
+    G = build_sheet(size=args.size, dim=args.dim, layers=args.layers)
+    if args.dim == 2:
+        center = (args.size // 2, args.size // 2)
+    else:
+        center = (args.size // 2, args.size // 2, args.layers // 2)
     defect_kwargs = {}
     if args.defect_type == "blackhole":
         defect_kwargs = {"center": center, "radius": args.radius}
     elif args.defect_type == "wedge":
-        defect_kwargs = {"center": center[:2], "layer": center[2]}
+        if args.dim == 2:
+            defect_kwargs = {"center": center}
+        else:
+            defect_kwargs = {"center": center[:2], "layer": center[2]}
 
     G, removed_nodes = apply_defect(
         G, defect_type=args.defect_type, return_removed=True, **defect_kwargs
@@ -59,14 +66,19 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     else:
         horizon_nodes = []
 
-    z = center[2]
-    nodes_on_layer = [n for n in G if len(n) > 2 and n[2] == z]
-    if not nodes_on_layer:
-        raise RuntimeError("No nodes remain on the central layer after defect application")
+    if args.dim == 3:
+        z = center[2]
+        nodes_on_layer = [n for n in G if len(n) > 3 and n[2] == z]
+        if not nodes_on_layer:
+            raise RuntimeError("No nodes remain on the central layer after defect application")
+    else:
+        nodes_on_layer = list(G.nodes)
+        if not nodes_on_layer:
+            raise RuntimeError("No nodes remain after defect application")
 
     # Kick the node closest to the geometric centre that survived the defect
     def _distance_sq(node):
-        r, c, _, _ = node
+        r, c = node[:2]
         return (r - center[0]) ** 2 + (c - center[1]) ** 2
 
     initial_node = min(nodes_on_layer, key=_distance_sq)
