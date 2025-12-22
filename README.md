@@ -34,6 +34,7 @@ G = nx.Graph()
 add_prime_helix(G, n_rings=12, dtheta=0.14, pitch=2.0)  # 12 prime rings
 plot_3d_graph(G, node_size=16, title="Prime-helix (12 rings)")
 
+```
 
 <p align="center">
   <img src="docs/img/prime_helix_demo.png" alt="Prime-helix demo" width="400">
