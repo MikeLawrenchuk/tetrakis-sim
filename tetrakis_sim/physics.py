@@ -61,6 +61,7 @@ def run_wave_sim(
     max_degree = max((G.degree[n] for n in nodes), default=0)
     effective_dt = float(dt)
     metadata: Dict[str, float | bool] = {
+        "steps": steps,
         "requested_dt": dt,
         "wave_speed": c,
         "max_degree": max_degree,

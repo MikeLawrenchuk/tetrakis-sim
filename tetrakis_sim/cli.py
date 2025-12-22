@@ -12,6 +12,10 @@ def main():
     parser.add_argument("--defect", type=str, default="none", help="Defect type (none, wedge, blackhole, custom)")
     parser.add_argument("--physics", type=str, default="none", help="Physics model (none, wave, fft)")
     parser.add_argument("--plot", action="store_true", help="Visualize output")
+    parser.add_argument("--steps", type=int, default=100, help="Number of simulation steps")
+    parser.add_argument("--c", type=float, default=1.0, help="Wave speed for simulations")
+    parser.add_argument("--dt", type=float, default=0.2, help="Time step size for simulations")
+    parser.add_argument("--damping", type=float, default=0.0, help="Damping coefficient for simulations")
     args = parser.parse_args()
 
     # Build the lattice (2D or 3D)
@@ -46,9 +50,15 @@ def main():
     history = None
     fft_payload = None
     if args.physics in {"wave", "fft"}:
-        history = run_wave_sim(G)
+        history = run_wave_sim(
+            G,
+            steps=args.steps,
+            c=args.c,
+            dt=args.dt,
+            damping=args.damping,
+        )
         if args.physics == "fft":
-            freq, spectrum, values = run_fft(history)
+            freq, spectrum, values = run_fft(history, dt=history.dt)
             fft_payload = (freq, spectrum, values)
 
     if args.plot:
@@ -63,4 +73,5 @@ def main():
         f"Edges: {G.number_of_edges()}",
         f"Removed nodes: {len(removed_nodes)}",
     )
-
+    if history is not None:
+        print("Simulation metadata:", history.metadata)

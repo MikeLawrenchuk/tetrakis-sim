@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
 import warnings
 from typing import Any, List, Optional, Tuple
 
@@ -22,11 +23,6 @@ if _matplotlib_pkg is not None:
 if _mpl_spec is not None:
     plt = importlib.import_module("matplotlib.pyplot")
 else:  # pragma: no cover - only triggered when matplotlib is missing
-    warnings.warn(
-        "matplotlib is not installed; tetrakis_sim plotting functions will act as no-ops.",
-        RuntimeWarning,
-        stacklevel=2,
-    )
 
     class _AxesStub:
         def add_patch(self, *_args: Any, **_kwargs: Any) -> None:
@@ -44,6 +40,18 @@ else:  # pragma: no cover - only triggered when matplotlib is missing
     plt = _MatplotlibStub()
 
 _HAS_MATPLOTLIB = _mpl_spec is not None
+_WARNED_NO_MATPLOTLIB = False
+
+
+def _warn_no_matplotlib() -> None:
+    global _WARNED_NO_MATPLOTLIB
+    if not _WARNED_NO_MATPLOTLIB and os.getenv("TETRAKIS_SIM_WARN_NO_PLOTTING") == "1":
+        warnings.warn(
+            "matplotlib is not installed; tetrakis_sim plotting functions will act as no-ops.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        _WARNED_NO_MATPLOTLIB = True
 
 if _HAS_MATPLOTLIB:
     _mplot3d_spec = importlib.util.find_spec("mpl_toolkits.mplot3d")
@@ -59,11 +67,6 @@ if _plotly_pkg is not None:
 if _plotly_spec is not None:
     go = importlib.import_module("plotly.graph_objects")
 else:  # pragma: no cover - only triggered when plotly is missing
-    warnings.warn(
-        "plotly is not installed; 3-D plotting helpers will act as no-ops.",
-        RuntimeWarning,
-        stacklevel=2,
-    )
 
     class _PlotlyTraceStub:
         def __init__(self, *_args: Any, **_kwargs: Any) -> None:
@@ -91,6 +94,18 @@ else:  # pragma: no cover - only triggered when plotly is missing
     go = _PlotlyStub()
 
 _HAS_PLOTLY = _plotly_spec is not None
+_WARNED_NO_PLOTLY = False
+
+
+def _warn_no_plotly() -> None:
+    global _WARNED_NO_PLOTLY
+    if not _WARNED_NO_PLOTLY and os.getenv("TETRAKIS_SIM_WARN_NO_PLOTTING") == "1":
+        warnings.warn(
+            "plotly is not installed; 3-D plotting helpers will act as no-ops.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        _WARNED_NO_PLOTLY = True
 
 def plot_floor_with_circle(
     G: nx.Graph,
@@ -110,6 +125,7 @@ def plot_floor_with_circle(
     an analytical event horizon circle. Supports node coloring via 'data'.
     """
     if not _HAS_MATPLOTLIB:
+        _warn_no_matplotlib()
         return None
 
     nodes_on_layer = [n for n in G if n[2] == z]
@@ -168,6 +184,7 @@ def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8
     Data can be a dict mapping nodes to color/size.
     """
     if not _HAS_MATPLOTLIB:
+        _warn_no_matplotlib()
         return None
 
     plt.figure(figsize=figsize)
@@ -204,6 +221,7 @@ def plot_fft(freq, spectrum, node=None, values=None):
     Plot the FFT amplitude spectrum. Optionally shows the time series.
     """
     if not _HAS_MATPLOTLIB:
+        _warn_no_matplotlib()
         return None
 
     plt.figure(figsize=(8, 3))
@@ -230,6 +248,7 @@ def plot_wave(time_steps, node_values, node=None):
     node_values should be a dict mapping node to array of values.
     """
     if not _HAS_MATPLOTLIB:
+        _warn_no_matplotlib()
         return None
 
     if node is None:
@@ -264,6 +283,7 @@ def plot_lattice_3d(
     title: plot title
     """
     if not _HAS_PLOTLY:
+        _warn_no_plotly()
         return None
 
     # Prepare data
@@ -344,6 +364,7 @@ def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
         Plot title.
     """
     if not _HAS_MATPLOTLIB:
+        _warn_no_matplotlib()
         return None
 
     xs, ys, zs = zip(*(G.nodes[n]["pos"] for n in G))
@@ -353,4 +374,3 @@ def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
     ax.set_title(title)
     ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
     plt.show()
-
