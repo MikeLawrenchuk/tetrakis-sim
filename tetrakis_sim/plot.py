@@ -178,10 +178,18 @@ def plot_floor_with_circle(
     plt.close()
 
 
-def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8,8), save: Optional[str]=None):
+def plot_lattice(
+    G: nx.Graph,
+    data=None,
+    title: Optional[str] = None,
+    figsize=(8, 8),
+    save: Optional[str] = None,
+    layer: Optional[int] = None,
+):
     """
     Plot a general 2D or 3D lattice (shows only present nodes/edges).
     Data can be a dict mapping nodes to color/size.
+    For 3D lattices, provide ``layer`` to plot a single z-slice.
     """
     if not _HAS_MATPLOTLIB:
         _warn_no_matplotlib()
@@ -189,21 +197,43 @@ def plot_lattice(G: nx.Graph, data=None, title: Optional[str] = None, figsize=(8
 
     plt.figure(figsize=figsize)
     pos = None
-    if all(len(n) == 3 for n in G.nodes):  # 2D: (r, c, q)
+    nodes = list(G.nodes)
+    if not nodes:
+        return None
+
+    if all(len(n) == 3 for n in nodes):  # 2D: (r, c, q)
         def node_pos(node):
             r, c, q = node
             offset = 0.18 * "ABCD".index(q)
             return (r + offset, c + offset)
-        pos = {n: node_pos(n) for n in G.nodes}
-    elif all(len(n) == 4 for n in G.nodes):  # 3D: (r, c, z, q) - only show one z?
-        print("Warning: 3D lattice detected. Use plot_floor_with_circle for specific floors.")
-        return
-    nx.draw(G, pos, node_size=60, with_labels=False, alpha=0.7)
+        plot_nodes = nodes
+        pos = {n: node_pos(n) for n in plot_nodes}
+        H = G
+    elif all(len(n) == 4 for n in nodes):  # 3D: (r, c, z, q)
+        if layer is None:
+            print(
+                "Warning: 3D lattice detected. Provide `layer` or use "
+                "plot_floor_with_circle/plot_lattice_3d."
+            )
+            return None
+        plot_nodes = [n for n in nodes if n[2] == layer]
+        if not plot_nodes:
+            print(f"Warning: No nodes found on layer {layer}.")
+            return None
+        def node_pos(node):
+            r, c, z, q = node
+            offset = 0.18 * "ABCD".index(q)
+            return (r + offset, c + offset)
+        pos = {n: node_pos(n) for n in plot_nodes}
+        H = G.subgraph(plot_nodes)
+    else:
+        raise ValueError("Unsupported node format for plot_lattice")
+
+    nx.draw(H, pos, node_size=60, with_labels=False, alpha=0.7)
     if data:
         # For node coloring, overlay scatter
-        nodes = list(G.nodes)
-        xs, ys = zip(*[pos[n] for n in nodes])
-        colors = [data.get(n, 0.5) for n in nodes]
+        xs, ys = zip(*[pos[n] for n in plot_nodes])
+        colors = [data.get(n, 0.5) for n in plot_nodes]
         plt.scatter(xs, ys, c=colors, cmap='viridis', s=100)
     if title:
         plt.title(title)
