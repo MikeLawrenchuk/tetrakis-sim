@@ -8,6 +8,8 @@ import pytest
 from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.defects import apply_blackhole_defect
 from tetrakis_sim.physics import SimulationHistory, run_fft, run_wave_sim
+from tetrakis_sim.defects import find_event_horizon
+
 
 
 def _rotate90_2d(node, size: int):
@@ -113,3 +115,87 @@ def test_fft_detects_known_sine_frequency():
 
     resolution = 1.0 / (N * dt)
     assert abs(abs(dom) - f0) <= resolution + 1e-9
+
+
+def test_event_horizon_nodes_touch_removed_nodes_2d():
+    size = 7
+    center = (3, 3)
+    radius = 1.9
+
+    G0 = build_sheet(size=size, dim=2)  # pre-defect graph for adjacency
+    G1 = build_sheet(size=size, dim=2)  # graph that will actually be mutated
+
+    removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
+
+    horizon = set(
+        find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0)
+    )
+    assert horizon, "Expected a non-empty horizon for this radius/center."
+
+    for n in horizon:
+        assert any(nb in removed for nb in G0.neighbors(n)), (
+            f"Horizon node {n} has no removed neighbors in the pre-defect graph."
+        )
+
+
+def test_event_horizon_excludes_removed_nodes():
+    size = 7
+    center = (3, 3)
+    radius = 1.9
+
+    G0 = build_sheet(size=size, dim=2)
+    G1 = build_sheet(size=size, dim=2)
+    removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
+
+    horizon = set(
+        find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0)
+    )
+    assert horizon.isdisjoint(removed), "Horizon must not include removed nodes."
+
+
+def test_blackhole_defect_removes_all_layers_for_xy_in_3d():
+    size = 6
+    center = (2.0, 2.0)
+    radius = 1.6
+    layers = 4
+
+    G = build_sheet(size=size, dim=3, layers=layers)
+    removed = set(apply_blackhole_defect(G, center=center, radius=radius))
+
+    # Pick one (x,y) that should definitely be inside the radius
+    x, y = 2, 2
+    for z in range(layers):
+        for q in "ABCD":
+            assert (x, y, z, q) in removed
+
+
+def test_fft_frequency_invariant_under_sampling_rate_change():
+    f0 = 3.0  # Hz
+
+    # Case A
+    dt_a = 0.05
+    N_a = 200
+    t_a = np.arange(N_a) * dt_a
+    sig_a = np.sin(2.0 * np.pi * f0 * t_a)
+    hist_a = SimulationHistory([{0: float(v)} for v in sig_a], dt=dt_a, wave_speed=1.0)
+
+    # Case B (different dt, similar total duration)
+    dt_b = 0.1
+    N_b = 100
+    t_b = np.arange(N_b) * dt_b
+    sig_b = np.sin(2.0 * np.pi * f0 * t_b)
+    hist_b = SimulationHistory([{0: float(v)} for v in sig_b], dt=dt_b, wave_speed=1.0)
+
+    freq_a, spec_a, _ = run_fft(hist_a, node=0)
+    freq_b, spec_b, _ = run_fft(hist_b, node=0)
+
+    dom_a = float(freq_a[int(np.argmax(spec_a))])
+    dom_b = float(freq_b[int(np.argmax(spec_b))])
+
+    # Allow tolerance at each frequency resolution
+    res_a = 1.0 / (N_a * dt_a)
+    res_b = 1.0 / (N_b * dt_b)
+
+    assert abs(abs(dom_a) - f0) <= res_a + 1e-9
+    assert abs(abs(dom_b) - f0) <= res_b + 1e-9
+

@@ -151,14 +151,23 @@ def find_event_horizon(
     G: nx.Graph,
     removed_nodes: List,
     radius: float,
-    center: Tuple[int, ...]
+    center: Tuple[int, ...],
+    *,
+    adjacency_graph: Optional[nx.Graph] = None,
 ) -> List:
     """
     Finds nodes just outside the black hole (event horizon):
-    These are nodes within one grid spacing of the radius and adjacent to removed nodes.
+    nodes within one grid spacing of the radius AND adjacent to removed nodes.
+
+    Important:
+    If the black-hole defect removed nodes from G, those removed nodes will no
+    longer appear in G.neighbors(...). In that case, pass the *pre-defect*
+    graph as adjacency_graph so adjacency to removed nodes can be evaluated.
     """
     horizon = set()
     removed_set = set(removed_nodes)
+    adjG = adjacency_graph or G
+
     for node in G.nodes:
         # Compute distance from center
         if len(center) == 2:
@@ -166,12 +175,19 @@ def find_event_horizon(
             dist = math.hypot(r - center[0], c - center[1])
         else:
             r, c, z = node[:3]
-            dist = math.sqrt((r - center[0])**2 + (c - center[1])**2 + (z - center[2])**2)
+            dist = math.sqrt(
+                (r - center[0]) ** 2
+                + (c - center[1]) ** 2
+                + (z - center[2]) ** 2
+            )
+
         # "Shell" just outside radius, and must touch a removed node
         if radius - 1 <= dist < radius + 1:
-            if any(neigh in removed_set for neigh in G.neighbors(node)):
+            if any(neigh in removed_set for neigh in adjG.neighbors(node)):
                 horizon.add(node)
+
     return list(horizon)
+
 
 def apply_defect(
     G: nx.Graph,
