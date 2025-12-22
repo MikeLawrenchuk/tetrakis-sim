@@ -31,25 +31,28 @@ def _first_primes(count: int) -> List[int]:
     if count <= 0:
         return []
 
-    primes: List[int] = []
-    candidate = 2
+    if count < 6:
+        upper_bound = 15
+    else:
+        estimate = count * (math.log(count) + math.log(math.log(count)))
+        upper_bound = int(estimate) + 10
 
-    while len(primes) < count:
-        is_prime = True
-        limit = math.isqrt(candidate)
-        for p in primes:
-            if p > limit:
-                break
-            if candidate % p == 0:
-                is_prime = False
-                break
+    while True:
+        sieve = [True] * (upper_bound + 1)
+        sieve[0:2] = [False, False]
+        limit = math.isqrt(upper_bound)
+        for p in range(2, limit + 1):
+            if sieve[p]:
+                step_start = p * p
+                sieve[step_start:upper_bound + 1:p] = [False] * (
+                    ((upper_bound - step_start) // p) + 1
+                )
 
-        if is_prime:
-            primes.append(candidate)
+        primes = [i for i, is_prime in enumerate(sieve) if is_prime]
+        if len(primes) >= count:
+            return primes[:count]
 
-        candidate += 1 if candidate == 2 else 2  # skip even numbers > 2
-
-    return primes
+        upper_bound *= 2
 
 
 # ---------------------------------------------------------------------------
