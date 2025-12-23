@@ -1,11 +1,13 @@
 # scripts/run_batch.py
 
+import ast
 import argparse
 import os
 import json
 from datetime import datetime
 
 import numpy as np
+
 
 from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.defects import apply_defect, find_event_horizon
@@ -29,9 +31,16 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     parser.add_argument('--c', type=float, default=1.0, help='Wave speed (default=1.0)')
     parser.add_argument('--dt', type=float, default=0.2, help='Time step size (default=0.2)')
     parser.add_argument('--damping', type=float, default=0.0, help='Wave damping (default=0.0)')
-    parser.add_argument('--defect_type', type=str, default='blackhole', choices=['blackhole', 'wedge', 'none'], help='Type of defect to apply')
+    parser.add_argument('--defect_type', type=str, default='blackhole', choices=['blackhole', 'wedge', 'none', 'singularity' ], help='Type of defect  to apply')
     parser.add_argument('--outdir', type=str, default='batch_cli_output', help='Directory to save output')
     parser.add_argument('--prefix', type=str, default=None, help='Custom prefix for output files (optional)')
+    parser.add_argument( "--kick", type=str, default=None, help="Kick node tuple as a Python literal, e.g. '(10,10,\"A\")' or '(10,10,2,\"A\")'",)
+    parser.add_argument('--sing_mass', type=float, default=1000.0, help='Singularity mass')
+    parser.add_argument('--sing_potential', type=float, default=0.0, help='Singularity potential')
+    parser.add_argument('--sing_radius', type=float, default=0.0, help='Singularity radius')
+    parser.add_argument('--sing_prune_edges', action='store_true', help='Prune edges at singularity region')
+    
+
 
     args = parser.parse_args()
 
@@ -44,6 +53,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
 
     # Build lattice and apply defect
     G = build_sheet(size=args.size, dim=args.dim, layers=args.layers)
+    G_pre_defect = G.copy()
     if args.dim == 2:
         center = (args.size // 2, args.size // 2)
     else:
@@ -57,12 +67,25 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
         else:
             defect_kwargs = {"center": center[:2], "layer": center[2]}
 
+    elif args.defect_type == "singularity":
+        defect_kwargs = {
+            "center": center,
+            "mass": args.sing_mass,
+            "potential": args.sing_potential,
+            "radius": args.sing_radius,
+            "prune_edges": args.sing_prune_edges,
+        }
+
+
+
+
     G, removed_nodes = apply_defect(
         G, defect_type=args.defect_type, return_removed=True, **defect_kwargs
     )
 
     if args.defect_type == "blackhole":
-        horizon_nodes = find_event_horizon(G, removed_nodes, args.radius, center)
+        horizon_nodes = find_event_horizon(G, removed_nodes, args.radius, center, adjacency_graph=G_pre_defect)
+
     else:
         horizon_nodes = []
 
@@ -81,8 +104,29 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
         r, c = node[:2]
         return (r - center[0]) ** 2 + (c - center[1]) ** 2
 
-    initial_node = min(nodes_on_layer, key=_distance_sq)
+    if args.kick:
+        initial_node = ast.literal_eval(args.kick)
+        if initial_node not in G:
+            raise ValueError(f"--kick node {initial_node} is not in the graph after defect application")
+    else:
+        # Prefer connected, non-singular nodes (avoids degree-0 ramps and avoids kicking the singular point)
+        candidates = [
+            n for n in nodes_on_layer
+            if G.degree[n] > 0 and not G.nodes[n].get("singular", False)
+        ]
+        pool = candidates if candidates else nodes_on_layer
+        initial_node = min(pool, key=_distance_sq)
+
+    print(
+        "kick node:", initial_node,
+        "degree:", G.degree[initial_node],
+        "singular:", G.nodes[initial_node].get("singular", False),
+    )
     initial_data = {initial_node: 1.0}
+
+
+
+
 
     history = run_wave_sim(
         G, steps=args.steps, initial_data=initial_data,

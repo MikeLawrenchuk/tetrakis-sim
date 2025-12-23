@@ -203,7 +203,7 @@ def apply_defect(
     G:
         Graph to mutate in-place.
     defect_type:
-        One of ``"wedge"``, ``"blackhole"`` or ``"none"``.
+        One of ``"wedge"``, ``"blackhole"``, ``"singularity"``  or ``"none"``.
     return_removed:
         If ``True`` the function returns ``(graph, removed_nodes)`` for
         backwards compatibility with legacy call-sites that only required the
@@ -220,9 +220,88 @@ def apply_defect(
         result = apply_wedge_defect(G, return_result=True, **kwargs)
     elif defect_type == "blackhole":
         result = apply_blackhole_defect(G, return_result=True, **kwargs)
+    elif defect_type == "singularity":
+        result = apply_singularity_defect(G, return_result=True, **kwargs)
+
     else:
         raise ValueError(f"Unsupported defect type '{defect_type}'")
 
     if return_removed:
         return result.graph, list(result.removed_nodes)
     return result.graph
+
+
+def apply_singularity_defect(
+    G: nx.Graph,
+    center: Tuple[int, ...],
+    *,
+    mass: float = 1000.0,
+    potential: float = 0.0,
+    radius: float = 0.0,
+    prune_edges: bool = False,
+    return_result: bool = False,
+) -> nx.Graph | DefectResult:
+    """
+    "Naked singularity" defect: do NOT delete nodes.
+    Instead, tag nodes near the center with large mass and/or potential.
+    Optionally prune edges within a radius to create a sharp local topology change.
+
+    Parameters
+    ----------
+    center:
+        (r,c) for 2D or (r,c,z) for 3D.
+    mass:
+        Large mass makes the node respond less to Laplacian forcing.
+    potential:
+        Local restoring potential term; positive acts like a local "pinning".
+    radius:
+        Nodes with dist <= radius are tagged.
+    prune_edges:
+        If True, remove all edges incident to tagged nodes (extreme scattering).
+    """
+    if not G.nodes:
+        result = DefectResult(G)
+        return result if return_result else result.graph
+
+    tagged_nodes: List[Tuple] = []
+    removed_edges: List[Tuple] = []
+
+    for node in list(G.nodes):
+        if len(center) == 2:
+            r, c = node[:2]
+            dist = math.hypot(r - center[0], c - center[1])
+        else:
+            r, c, z = node[:3]
+            dist = math.sqrt(
+                (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
+            )
+
+        if dist <= radius:
+            tagged_nodes.append(node)
+            # Attach physics parameters as node attributes
+            G.nodes[node]["mass"] = float(mass)
+            G.nodes[node]["potential"] = float(potential)
+            G.nodes[node]["singular"] = True
+
+    if prune_edges:
+        for n in tagged_nodes:
+            for nb in list(G.neighbors(n)):
+                if G.has_edge(n, nb):
+                    G.remove_edge(n, nb)
+                    removed_edges.append((n, nb))
+
+    result = DefectResult(
+        G,
+        removed_nodes=tuple(),  # none removed
+        removed_edges=tuple(removed_edges),
+        metadata={
+            "singularity_center": center,
+            "singularity_radius": radius,
+            "singularity_mass": mass,
+            "singularity_potential": potential,
+            "singularity_prune_edges": prune_edges,
+            "singularity_tagged_count": len(tagged_nodes),
+        },
+    )
+    return result if return_result else result.graph
+

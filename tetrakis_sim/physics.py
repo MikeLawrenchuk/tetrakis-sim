@@ -95,14 +95,28 @@ def run_wave_sim(
             neighbor_sum = sum(u[nb] for nb in G.neighbors(n))
             deg = G.degree[n]
             lap = neighbor_sum - deg * u[n]
+
+            mass = float(G.nodes[n].get("mass", 1.0))
+            potential = float(G.nodes[n].get("potential", 0.0))
+
+            if mass <= 0.0:
+                mass = 1.0
+
             unew[n] = (
                 2 * u[n]
                 - uprev[n]
-                + coeff * lap
+                + (coeff / mass) * lap
+                - coeff * potential * u[n]
                 - damping * (u[n] - uprev[n])
             )
+
         uprev, u = u, unew
         history.append(u.copy())
+            
+
+
+
+
 
     return SimulationHistory(history, dt=effective_dt, wave_speed=c, metadata=metadata)
 
