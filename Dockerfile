@@ -1,4 +1,11 @@
-FROM python:3.11.9-slim AS build
+FROM python:3.11-slim-bookworm AS build
+
+# Pull Debian security updates at build time (reduces OS-package CVEs).
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Workdir & non-root user
 ARG USER=app
@@ -7,8 +14,8 @@ WORKDIR /home/${USER}
 
 # Requirements first (leverages layer caching)
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install --no-cache-dir -r requirements.txt
 
 # Application code: copy all relevant directories and files
 COPY lattice_sim.py .
@@ -20,8 +27,6 @@ COPY scripts/ ./scripts/
 # Switch to non-root
 USER ${USER}
 
-# Expose port for Jupyter (optional, only if you want to run a notebook server)
-# EXPOSE 8888
-
 # Default: start a bash shell (so you can run Python, scripts, or open a shell)
 CMD ["bash"]
+
