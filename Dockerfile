@@ -1,11 +1,12 @@
+
 FROM python:3.11-slim-bookworm AS build
 
-# Pull Debian security updates at build time (reduces OS-package CVEs).
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Workdir & non-root user
 ARG USER=app
