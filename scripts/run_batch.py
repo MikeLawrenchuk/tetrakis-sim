@@ -37,7 +37,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     parser.add_argument( "--kick", type=str, default=None, help="Kick node tuple as a Python literal, e.g. '(10,10,\"A\")' or '(10,10,2,\"A\")'",)
     parser.add_argument('--sing_mass', type=float, default=1000.0, help='Singularity mass')
     parser.add_argument('--sing_potential', type=float, default=0.0, help='Singularity potential')
-    parser.add_argument('--sing_radius', type=float, default=0.0, help='Singularity radius')
+    parser.add_argument('--sing_radius', type=float, default=None, help='Singularity radius (default: use --radius)')
     parser.add_argument('--sing_prune_edges', action='store_true', help='Prune edges at singularity region')
     
 
@@ -68,11 +68,12 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
             defect_kwargs = {"center": center[:2], "layer": center[2]}
 
     elif args.defect_type == "singularity":
+        sr = args.radius if args.sing_radius is None else args.sing_radius
         defect_kwargs = {
             "center": center,
             "mass": args.sing_mass,
             "potential": args.sing_potential,
-            "radius": args.sing_radius,
+            "radius": sr,
             "prune_edges": args.sing_prune_edges,
         }
 
@@ -136,11 +137,12 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     # FFT analysis and plot
     freq, spectrum, values = run_fft(history, initial_node)
     plot_filename = os.path.join(args.outdir, f"{prefix}_fft_node{initial_node}.png")
-    import matplotlib.pyplot as plt
-    plot_fft(freq, spectrum, node=initial_node, values=values)
-    plt.savefig(plot_filename, dpi=150, bbox_inches="tight")
-    plt.close()
+
+    # plot_fft now saves the figure itself; do not call plt.savefig() here
+    plot_fft(freq, spectrum, node=initial_node, values=values, save=plot_filename, show=False)
+
     print(f"Saved FFT plot to {plot_filename}")
+
 
     # Save spectrum CSV
     csv_filename = os.path.join(args.outdir, f"{prefix}_spectrum.csv")

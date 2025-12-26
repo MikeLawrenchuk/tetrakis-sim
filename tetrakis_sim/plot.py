@@ -246,30 +246,50 @@ def plot_lattice(
 # Optionally: Add stub for FFT and wave plotting
 
 
-def plot_fft(freq, spectrum, node=None, values=None):
+def plot_fft(freq, spectrum, node=None, values=None, save=None, show=True):
     """
-    Plot the FFT amplitude spectrum. Optionally shows the time series.
+    Plot the FFT amplitude spectrum and (optionally) the time series.
+
+    Parameters
+    ----------
+    save : str | None
+        If provided, save the figure to this path.
+    show : bool
+        If True, display the figure interactively. For batch/CLI usage, set False.
     """
     if not _HAS_MATPLOTLIB:
         _warn_no_matplotlib()
         return None
 
-    plt.figure(figsize=(8, 3))
-    plt.subplot(1, 2, 1)
-    plt.plot(freq, spectrum)
-    plt.title(f"FFT amplitude{f' (node={node})' if node else ''}")
-    plt.xlabel("Frequency")
-    plt.ylabel("Amplitude")
-    plt.grid(True)
-    plt.subplot(1, 2, 2)
+    fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+
+    ax0 = axes[0]
+    ax0.plot(freq, spectrum)
+    ax0.set_title(f"FFT amplitude{f' (node={node})' if node else ''}")
+    ax0.set_xlabel("Frequency")
+    ax0.set_ylabel("Amplitude")
+    ax0.grid(True)
+
+    ax1 = axes[1]
     if values is not None:
-        plt.plot(values)
-        plt.title("Node value over time")
-        plt.xlabel("Time step")
-        plt.ylabel("Value")
-        plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+        ax1.plot(values)
+        ax1.set_title("Node value over time")
+        ax1.set_xlabel("Time step")
+        ax1.set_ylabel("Value")
+        ax1.grid(True)
+    else:
+        ax1.set_axis_off()
+
+    fig.tight_layout()
+
+    if save is not None:
+        fig.savefig(save, dpi=150, bbox_inches="tight")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+    return fig
 
 
 def plot_wave(time_steps, node_values, node=None):
