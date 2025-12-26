@@ -31,6 +31,37 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def spectral_metrics_from_csv(csv_path: str):
+    """
+    Compute peak (positive-frequency), centroid, and bandwidth from a spectrum CSV.
+    Assumes CSV columns: frequency, amplitude with a header row.
+    """
+    import numpy as np
+
+    data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
+    freq, amp = data[:, 0], data[:, 1]
+
+    # Use only positive frequencies (avoid the negative mirror peak)
+    m = freq > 0
+    freq, amp = freq[m], amp[m]
+
+    # Protect against negative/NaN amplitudes
+    amp = np.nan_to_num(amp, nan=0.0, posinf=0.0, neginf=0.0)
+    amp = np.maximum(amp, 0.0)
+
+    if amp.sum() <= 0:
+        return float("nan"), float("nan"), float("nan")
+
+    # Dominant frequency (peak bin)
+    peak_f = float(freq[int(amp.argmax())])
+
+    # Spectral centroid and bandwidth (amplitude-weighted)
+    w = amp / (amp.sum() + 1e-12)
+    centroid = float((w * freq).sum())
+    bandwidth = float(((w * (freq - centroid) ** 2).sum()) ** 0.5)
+
+    return peak_f, centroid, bandwidth
+
 
 @dataclass(frozen=True)
 class RunSpec:
@@ -61,9 +92,12 @@ def _first_supported(flags: Sequence[str], supported: set) -> Optional[str]:
     return None
 
 
-def _dominant_from_spectrum(csv_path: Path) -> Optional[float]:
+from typing import Optional, Tuple
+
+def _dominant_from_spectrum(csv_path: Path) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     try:
         df = pd.read_csv(csv_path)
+
         # Heuristic column matching
         freq_col = None
         amp_col = None
@@ -73,14 +107,39 @@ def _dominant_from_spectrum(csv_path: Path) -> Optional[float]:
                 freq_col = c
             if "amp" in cl or "spectrum" in cl:
                 amp_col = c
+
         if freq_col is None:
             freq_col = df.columns[0]
         if amp_col is None:
             amp_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
-        idx = int(np.argmax(df[amp_col].to_numpy()))
-        return float(df[freq_col].iloc[idx])
+
+        freq = df[freq_col].to_numpy(dtype=float)
+        amp = df[amp_col].to_numpy(dtype=float)
+
+        # Use only positive frequencies (avoid negative mirror peak)
+        m = freq > 0
+        freq = freq[m]
+        amp = amp[m]
+
+        # Sanitize amplitudes
+        amp = np.nan_to_num(amp, nan=0.0, posinf=0.0, neginf=0.0)
+        amp = np.maximum(amp, 0.0)
+
+        if amp.sum() <= 0 or len(freq) == 0:
+            return None, None, None
+
+        # Dominant frequency (peak bin)
+        dom = float(freq[int(np.argmax(amp))])
+
+        # Spectral centroid and bandwidth
+        w = amp / (amp.sum() + 1e-12)
+        centroid = float((w * freq).sum())
+        bandwidth = float(np.sqrt((w * (freq - centroid) ** 2).sum()))
+
+        return dom, centroid, bandwidth
+
     except Exception:
-        return None
+        return None, None, None
 
 
 def _dominant_from_metadata(meta_path: Path) -> Optional[float]:
@@ -89,6 +148,8 @@ def _dominant_from_metadata(meta_path: Path) -> Optional[float]:
         # common key variants
         candidates = [
             "dominant_freq",
+            "centroid",
+            "bandwidth",
             "dominant_frequency",
             "dominantFrequency",
             "peak_freq",
@@ -180,10 +241,17 @@ def run_one(
     spec_path = spectrum_files[0] if spectrum_files else None
 
     dom = None
+    centroid = None
+    bandwidth = None
+
     if meta_path is not None:
         dom = _dominant_from_metadata(meta_path)
-    if dom is None and spec_path is not None:
-        dom = _dominant_from_spectrum(spec_path)
+
+    if spec_path is not None:
+        # _dominant_from_spectrum now returns (dom, centroid, bandwidth)
+        dom2, centroid, bandwidth = _dominant_from_spectrum(spec_path)
+        if dom is None:
+            dom = dom2
 
     return {
         "defect_type": spec.defect_type,
@@ -194,6 +262,8 @@ def run_one(
         "metadata": str(meta_path) if meta_path else None,
         "spectrum": str(spec_path) if spec_path else None,
         "dominant_freq": dom,
+        "centroid": centroid,
+        "bandwidth": bandwidth,
     }
 
 
