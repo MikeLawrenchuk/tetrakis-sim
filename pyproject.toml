@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tetrakis-sim"
+version = "0.1.0"
+description = "Discrete geometry & wave simulation on tetrakis-square lattices with defect models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Mike Lawrenchuk" }]
+
+keywords = ["simulation", "lattice", "wave", "graph", "physics", "discrete-geometry"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = [
+  "networkx>=3.0",
+  "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+plot = [
+  "matplotlib>=3.7",
+  "plotly>=5.0",
+  "kaleido>=0.2",
+]
+
+# Install with: pip install -e ".[dev,plot]"
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "ruff>=0.4",
+  "black>=24.0",
+  "mypy>=1.8",
+  "pandas>=2.0",
+  "jupyter>=1.0",
+  "ipykernel>=6.0",
+  "build>=1.0",
+]
+
+[project.urls]
+Homepage = "https://mikelawrenchuk.github.io/"
+Repository = "https://github.com/MikeLawrenchuk/tetrakis-sim"
+Issues = "https://github.com/MikeLawrenchuk/tetrakis-sim/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tetrakis_sim*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+
