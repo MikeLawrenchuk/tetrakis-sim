@@ -53,6 +53,19 @@ tetrakis-sim = "tetrakis_sim.cli:main"
 tetrakis-batch = "tetrakis_sim.batch:main"
 
 
+plot = [
+  "matplotlib>=3.7",
+  "plotly>=5.0",
+  "kaleido>=0.2",
+]
+
+[project.scripts]
+tetrakis-sim = "tetrakis_sim.cli:main"
+tetrakis-batch = "tetrakis_sim.batch:main"
+
+
+=======
+>>>>>>> origin/main
 
 [project.urls]
 Homepage = "https://mikelawrenchuk.github.io/"
