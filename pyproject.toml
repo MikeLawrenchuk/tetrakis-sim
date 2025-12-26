@@ -59,13 +59,6 @@ plot = [
   "kaleido>=0.2",
 ]
 
-[project.scripts]
-tetrakis-sim = "tetrakis_sim.cli:main"
-tetrakis-batch = "tetrakis_sim.batch:main"
-
-
-=======
->>>>>>> origin/main
 
 [project.urls]
 Homepage = "https://mikelawrenchuk.github.io/"
