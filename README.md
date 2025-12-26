@@ -7,7 +7,8 @@
 
 ## Overview
 
-*Tetrakis-Sim* is a research-grade Python toolkit for discrete geometry, wave simulation, and spectral analysis on 2D/3D tetrakis-square lattices with advanced defects (black holes, wedges, event horizons).
+*Tetrakis-Sim* is a research-grade Python toolkit for discrete geometry, wave simulation, and spectral analysis on 2D/3D tetrakis-square lattices with advanced 
+defects (black holes, wedges, event horizons).
 
 **Features:**
 
@@ -24,7 +25,7 @@
 ## Prime-Helix Demo 🌐
 
 *Tetrakis-Sim* now includes a generator that winds the prime numbers into a
-3-D helix of taxicab “diamond” rings.  A single helper call draws the graph:
+3-D helix of taxicab “diamond” rings. A single helper call draws the graph:
 
 ```python
 from tetrakis_sim import add_prime_helix, plot_3d_graph
@@ -33,24 +34,40 @@ import networkx as nx
 G = nx.Graph()
 add_prime_helix(G, n_rings=12, dtheta=0.14, pitch=2.0)  # 12 prime rings
 plot_3d_graph(G, node_size=16, title="Prime-helix (12 rings)")
-
 ```
 
 <p align="center">
   <img src="docs/img/prime_helix_demo.png" alt="Prime-helix demo" width="400">
 </p>
 
+---
 
 ## Quick Start
 
-### 1. **Install (dev mode for notebooks/CLI)**
+### 1. Install (editable/dev mode for notebooks + CLI)
+
+From the repo root:
 
 ```bash
-pip install -e .
-pip install -r requirements-dev.txt  # for pandas, jupyter, etc.
+# Core dev tooling (pytest, black, ruff, mypy, etc.)
+pip install -e ".[dev]"
+
+# Optional plotting backends (matplotlib/plotly/kaleido)
+pip install -e ".[plot]"
+
+# Or install both at once:
+# pip install -e ".[dev,plot]"
 ```
 
-### 2. **Run a Simulation with the CLI**
+### 2. Run a Simulation with the Batch CLI
+
+After installing editable mode, you can run the batch runner as a command:
+
+```bash
+tetrakis-batch --size 11 --radius 2.5 --layers 7 --steps 50
+```
+
+Backward-compatible (still works when running from a clone):
 
 ```bash
 python scripts/run_batch.py --size 11 --radius 2.5 --layers 7 --steps 50
@@ -70,24 +87,24 @@ python scripts/run_batch.py --size 11 --radius 2.5 --layers 7 --steps 50
 See all options:
 
 ```bash
-python scripts/run_batch.py --help
+tetrakis-batch --help
 ```
 
 ---
 
-### 3. **Batch Parameter Sweeps (bash/zsh)**
+### 3. Batch Parameter Sweeps (bash/zsh)
 
 ```bash
 for size in 7 9 11; do
   for radius in 1.5 2.5 3.5; do
-    python scripts/run_batch.py --size $size --radius $radius --layers 5 --steps 40
+    tetrakis-batch --size $size --radius $radius --layers 5 --steps 40
   done
 done
 ```
 
 ---
 
-### 4. **Output Files**
+### 4. Output Files
 
 Saved to `batch_cli_output/` (or as specified):
 
@@ -97,7 +114,7 @@ Saved to `batch_cli_output/` (or as specified):
 
 ---
 
-### 5. **Analyze Batch Results in a Notebook**
+### 5. Analyze Batch Results in a Notebook
 
 **See:**
 
@@ -135,7 +152,7 @@ plt.xlabel("Black hole radius"); plt.ylabel("Dominant frequency"); plt.legend();
 ## Example: Advanced Run with Metadata
 
 ```bash
-python scripts/run_batch.py --size 13 --radius 3.5 --layers 7 --steps 100 --c 1.5 --dt 0.15 --damping 0.02 --prefix "my_experiment"
+tetrakis-batch --size 13 --radius 3.5 --layers 7 --steps 100 --c 1.5 --dt 0.15 --damping 0.02 --prefix "my_experiment"
 ```
 
 ---
@@ -154,22 +171,22 @@ python scripts/run_batch.py --size 13 --radius 3.5 --layers 7 --steps 100 --c 1.
 
 * **Source code:** See `tetrakis_sim/`
 * **Notebooks:** See `notebooks/analyze_batch_outputs.ipynb` for batch data analysis.
-* **CLI script:** See `scripts/run_batch.py --help`
+* **Batch runner:** `tetrakis-batch --help` (or `python scripts/run_batch.py --help` when running from a clone)
 
 ---
 
 ## Contributing / Collaboration
 
-Pull requests, issues, and collaborations are welcome!
-If you’re interested in research, teaching, or publishing with this code, please open an issue or contact [Mike Lawrenchuk](mailto:your-email@example.com).
+Pull requests, issues, and collaborations are welcome.
+If you are interested in research, teaching, or publishing with this code, please open an issue.
 
 ---
 
 ## License
 
 Distributed under the MIT License; see `LICENSE` for details.
----
-
-*For questions, collaboration, or scientific consulting, open an issue or contact the author!*
 
 ---
+
+*For questions, collaboration, or scientific consulting, open an issue or contact the author.*
+
