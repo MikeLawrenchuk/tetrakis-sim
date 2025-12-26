@@ -24,11 +24,6 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
 ]
 
-[project.urls]
-Homepage = "https://mikelawrenchuk.github.io/"
-Repository = "https://github.com/MikeLawrenchuk/tetrakis-sim"
-Issues = "https://github.com/MikeLawrenchuk/tetrakis-sim/issues"
-
 dependencies = [
   "networkx>=3.0",
   "numpy>=1.23",
@@ -51,7 +46,13 @@ dev = [
   "pandas>=2.0",
   "jupyter>=1.0",
   "ipykernel>=6.0",
+  "build>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://mikelawrenchuk.github.io/"
+Repository = "https://github.com/MikeLawrenchuk/tetrakis-sim"
+Issues = "https://github.com/MikeLawrenchuk/tetrakis-sim/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
