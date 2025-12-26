@@ -29,14 +29,8 @@ dependencies = [
   "numpy>=1.23",
 ]
 
-[project.optional-dependencies]
-plot = [
-  "matplotlib>=3.7",
-  "plotly>=5.0",
-  "kaleido>=0.2",
-]
-
 # Install with: pip install -e ".[dev,plot]"
+[project.optional-dependencies]
 dev = [
   "pytest>=7.0",
   "pytest-cov>=4.0",
@@ -48,6 +42,17 @@ dev = [
   "ipykernel>=6.0",
   "build>=1.0",
 ]
+plot = [
+  "matplotlib>=3.7",
+  "plotly>=5.0",
+  "kaleido>=0.2",
+]
+
+[project.scripts]
+tetrakis-sim = "tetrakis_sim.cli:main"
+tetrakis-batch = "tetrakis_sim.batch:main"
+
+
 
 [project.urls]
 Homepage = "https://mikelawrenchuk.github.io/"
