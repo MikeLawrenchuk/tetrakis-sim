@@ -6,7 +6,7 @@ Canonical naked-singularity sweep runner for Tetrakis-Sim.
 This script is designed to be "repo-local":
 - run it from the repo root (same level as scripts/run_batch.py)
 - it calls the existing batch CLI to generate outputs
-- it then builds a summary CSV + a simple plot
+- it then builds a summary CSV + simple plots
 
 Because CLI options evolve, the script tries to be resilient:
 - it detects which optional flags exist by reading `run_batch.py --help`
@@ -19,48 +19,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
-def spectral_metrics_from_csv(csv_path: str):
-    """
-    Compute peak (positive-frequency), centroid, and bandwidth from a spectrum CSV.
-    Assumes CSV columns: frequency, amplitude with a header row.
-    """
-    import numpy as np
-
-    data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
-    freq, amp = data[:, 0], data[:, 1]
-
-    # Use only positive frequencies (avoid the negative mirror peak)
-    m = freq > 0
-    freq, amp = freq[m], amp[m]
-
-    # Protect against negative/NaN amplitudes
-    amp = np.nan_to_num(amp, nan=0.0, posinf=0.0, neginf=0.0)
-    amp = np.maximum(amp, 0.0)
-
-    if amp.sum() <= 0:
-        return float("nan"), float("nan"), float("nan")
-
-    # Dominant frequency (peak bin)
-    peak_f = float(freq[int(amp.argmax())])
-
-    # Spectral centroid and bandwidth (amplitude-weighted)
-    w = amp / (amp.sum() + 1e-12)
-    centroid = float((w * freq).sum())
-    bandwidth = float(((w * (freq - centroid) ** 2).sum()) ** 0.5)
-
-    return peak_f, centroid, bandwidth
 
 
 @dataclass(frozen=True)
@@ -73,28 +41,36 @@ class RunSpec:
 
 def _run_help(py: str, run_batch: Path) -> str:
     try:
-        out = subprocess.check_output([py, str(run_batch), "--help"], text=True, stderr=subprocess.STDOUT)
+        out = subprocess.check_output(
+            [py, str(run_batch), "--help"], text=True, stderr=subprocess.STDOUT
+        )
         return out
     except Exception:
         # If help fails, we still attempt to run with minimal flags.
         return ""
 
 
-def _supported_flags(help_text: str) -> set:
+def _supported_flags(help_text: str) -> set[str]:
     # Extract tokens that look like "--flag".
     return set(re.findall(r"--[a-zA-Z0-9_\-]+", help_text))
 
 
-def _first_supported(flags: Sequence[str], supported: set) -> Optional[str]:
+def _first_supported(flags: Sequence[str], supported: set[str]) -> Optional[str]:
     for f in flags:
         if f in supported:
             return f
     return None
 
 
-from typing import Optional, Tuple
+def _dominant_from_spectrum(
+    csv_path: Path,
+) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    """
+    Return (dominant_freq, centroid, bandwidth) computed from the spectrum CSV.
 
-def _dominant_from_spectrum(csv_path: Path) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    - Uses only positive frequencies (avoids negative mirror peak).
+    - Computes centroid/bandwidth as amplitude-weighted moments.
+    """
     try:
         df = pd.read_csv(csv_path)
 
@@ -125,31 +101,30 @@ def _dominant_from_spectrum(csv_path: Path) -> Tuple[Optional[float], Optional[f
         amp = np.nan_to_num(amp, nan=0.0, posinf=0.0, neginf=0.0)
         amp = np.maximum(amp, 0.0)
 
-        if amp.sum() <= 0 or len(freq) == 0:
+        if len(freq) == 0 or amp.sum() <= 0:
             return None, None, None
 
-        # Dominant frequency (peak bin)
         dom = float(freq[int(np.argmax(amp))])
 
-        # Spectral centroid and bandwidth
         w = amp / (amp.sum() + 1e-12)
         centroid = float((w * freq).sum())
         bandwidth = float(np.sqrt((w * (freq - centroid) ** 2).sum()))
 
         return dom, centroid, bandwidth
-
     except Exception:
         return None, None, None
 
 
 def _dominant_from_metadata(meta_path: Path) -> Optional[float]:
+    """
+    Try to read dominant frequency from the metadata JSON.
+
+    NOTE: We intentionally do NOT treat centroid/bandwidth as dominant frequency.
+    """
     try:
         meta = json.loads(meta_path.read_text())
-        # common key variants
         candidates = [
             "dominant_freq",
-            "centroid",
-            "bandwidth",
             "dominant_frequency",
             "dominantFrequency",
             "peak_freq",
@@ -158,6 +133,7 @@ def _dominant_from_metadata(meta_path: Path) -> Optional[float]:
         for k in candidates:
             if k in meta:
                 return float(meta[k])
+
         # fall back: scan keys
         for k, v in meta.items():
             kl = str(k).lower()
@@ -181,7 +157,7 @@ def run_one(
     dt: float,
     damping: float,
     extra: Sequence[str],
-    supported: set,
+    supported: set[str],
 ) -> Dict[str, object]:
     outdir.mkdir(parents=True, exist_ok=True)
 
@@ -215,7 +191,9 @@ def run_one(
             cmd += [mass_flag, str(spec.sing_mass)]
 
     if spec.sing_potential is not None:
-        pot_flag = _first_supported(["--sing_potential", "--singularity_potential", "--potential"], supported)
+        pot_flag = _first_supported(
+            ["--sing_potential", "--singularity_potential", "--potential"], supported
+        )
         if pot_flag:
             cmd += [pot_flag, str(spec.sing_potential)]
 
@@ -234,24 +212,31 @@ def run_one(
     subprocess.run(cmd, check=True)
 
     # Locate outputs
-    meta_files = sorted(outdir.glob(f"{prefix}*metadata*.json")) + sorted(outdir.glob(f"*{prefix}*metadata*.json"))
-    spectrum_files = sorted(outdir.glob(f"{prefix}*spectrum*.csv")) + sorted(outdir.glob(f"*{prefix}*spectrum*.csv"))
+    meta_files = sorted(outdir.glob(f"{prefix}*metadata*.json")) + sorted(
+        outdir.glob(f"*{prefix}*metadata*.json")
+    )
+    spectrum_files = sorted(outdir.glob(f"{prefix}*spectrum*.csv")) + sorted(
+        outdir.glob(f"*{prefix}*spectrum*.csv")
+    )
 
     meta_path = meta_files[0] if meta_files else None
     spec_path = spectrum_files[0] if spectrum_files else None
 
-    dom = None
-    centroid = None
-    bandwidth = None
+    dom: Optional[float] = None
+    centroid: Optional[float] = None
+    bandwidth: Optional[float] = None
 
+    # Read dominant frequency from metadata if present
     if meta_path is not None:
         dom = _dominant_from_metadata(meta_path)
+        if dom is not None:
+            dom = abs(dom)
 
+    # Prefer spectrum-derived metrics when available (most consistent)
     if spec_path is not None:
-        # _dominant_from_spectrum now returns (dom, centroid, bandwidth)
         dom2, centroid, bandwidth = _dominant_from_spectrum(spec_path)
-        if dom is None:
-            dom = dom2
+        if dom2 is not None:
+            dom = dom2  # override metadata with spectrum-based (positive-freq) dominant
 
     return {
         "defect_type": spec.defect_type,
@@ -268,7 +253,9 @@ def run_one(
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    p = argparse.ArgumentParser(description="Run a canonical sweep comparing blackhole/wedge/singularity.")
+    p = argparse.ArgumentParser(
+        description="Run a canonical sweep comparing blackhole/wedge/singularity."
+    )
     p.add_argument("--run_batch", default="scripts/run_batch.py", help="Path to batch runner.")
     p.add_argument("--outdir", default="batch_cli_output_singularity", help="Where to place outputs.")
     p.add_argument("--size", type=int, default=11)
@@ -279,10 +266,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p.add_argument("--damping", type=float, default=0.02)
 
     p.add_argument("--blackhole_radii", default="2.5", help="Comma-separated radii.")
-    p.add_argument("--sing_radii", default="0.5,1.0", help="Comma-separated radii (influence or tiny horizon).")
+    p.add_argument("--sing_radii", default="0.5,1.0", help="Comma-separated radii.")
 
-    p.add_argument("--sing_masses", default="50,200", help="Comma-separated masses for singularity (if supported).")
-
+    p.add_argument("--sing_masses", default="50,200", help="Comma-separated masses (if supported).")
     p.add_argument("--sing_potentials", default="0,25", help="Comma-separated potentials (if supported).")
 
     p.add_argument(
@@ -294,7 +280,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p.add_argument(
         "--extra",
         default="",
-        help="Extra args passed through to run_batch (quoted string). Example: '--node 0 --seed 123'.",
+        help="Extra args passed through to run_batch (quoted string). Example: '--kick \"(5,5,2,\\\"A\\\")\"'.",
     )
 
     args = p.parse_args(argv)
@@ -316,7 +302,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     sing_pots = parse_floats(args.sing_potentials)
 
     include = [x.strip() for x in args.include.split(",") if x.strip()]
-
     extra = args.extra.strip().split() if args.extra.strip() else []
 
     runs: List[RunSpec] = []
@@ -326,15 +311,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             runs.append(RunSpec(defect_type="blackhole", radius=r))
 
     if "wedge" in include:
-        # Wedge defect may ignore radius; we still provide a value for consistency.
-        for r in [0.0]:
-            runs.append(RunSpec(defect_type="wedge", radius=r))
+        runs.append(RunSpec(defect_type="wedge", radius=0.0))
 
     if "singularity" in include:
         for r in sing_radii:
             for M in sing_masses:
                 for V in sing_pots:
-                    runs.append(RunSpec(defect_type="singularity", radius=r, sing_mass=M, sing_potential=V))
+                    runs.append(
+                        RunSpec(defect_type="singularity", radius=r, sing_mass=M, sing_potential=V)
+                    )
 
     results: List[Dict[str, object]] = []
     for spec in runs:
@@ -359,23 +344,43 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     df.to_csv(summary_csv, index=False)
     print("\nWrote", summary_csv)
 
-    # Simple plot: dominant frequency vs. mass, faceted by potential, for singularity only
+    # Plot 1: centroid vs mass (faceted by potential) for singularity only
     try:
-        df2 = df[df["defect_type"] == "singularity"].dropna(subset=["dominant_freq"])
+        df2 = df[df["defect_type"] == "singularity"].dropna(subset=["centroid"])
         if not df2.empty:
             fig = plt.figure()
             for V, sub in df2.groupby("sing_potential"):
                 sub = sub.sort_values("sing_mass")
-                plt.plot(sub["sing_mass"], sub["dominant_freq"], marker="o", label=f"V={V}")
+                plt.plot(sub["sing_mass"], sub["centroid"], marker="o", label=f"V={V}")
             plt.xlabel("sing_mass")
-            plt.ylabel("dominant_freq")
-            plt.title("Singularity sweep: dominant frequency vs mass")
+            plt.ylabel("centroid")
+            plt.title("Singularity sweep: spectral centroid vs mass")
             plt.legend()
-            plot_path = outdir / "singularity_sweep_dominant_freq.png"
+            plot_path = outdir / "singularity_sweep_centroid.png"
             plt.savefig(plot_path, dpi=160, bbox_inches="tight")
+            plt.close(fig)
             print("Wrote", plot_path)
     except Exception as e:
-        print("[warn] plot failed:", e)
+        print("[warn] centroid plot failed:", e)
+
+    # Plot 2: bandwidth vs mass (faceted by potential)
+    try:
+        df2 = df[df["defect_type"] == "singularity"].dropna(subset=["bandwidth"])
+        if not df2.empty:
+            fig = plt.figure()
+            for V, sub in df2.groupby("sing_potential"):
+                sub = sub.sort_values("sing_mass")
+                plt.plot(sub["sing_mass"], sub["bandwidth"], marker="o", label=f"V={V}")
+            plt.xlabel("sing_mass")
+            plt.ylabel("bandwidth")
+            plt.title("Singularity sweep: spectral bandwidth vs mass")
+            plt.legend()
+            plot_path = outdir / "singularity_sweep_bandwidth.png"
+            plt.savefig(plot_path, dpi=160, bbox_inches="tight")
+            plt.close(fig)
+            print("Wrote", plot_path)
+    except Exception as e:
+        print("[warn] bandwidth plot failed:", e)
 
     return 0
 
