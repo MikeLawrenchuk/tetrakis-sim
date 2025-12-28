@@ -1,4 +1,4 @@
-exclude: '(\.ipynb$|\.bak\.)'
+exclude: '(\.ipynb$|\.bak$|\.bak\.)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -6,6 +6,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-toml
       - id: check-added-large-files
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -18,3 +19,13 @@ repos:
     rev: 24.4.2
     hooks:
       - id: black
+
+  # Optional local gate (uses your active venv / system python)
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy tetrakis_sim
+        language: system
+        types: [python]
+        pass_filenames: false

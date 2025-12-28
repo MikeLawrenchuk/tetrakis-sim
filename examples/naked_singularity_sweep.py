@@ -186,9 +186,7 @@ def run_one(
 
     # Optional singularity flags (try common variants)
     if spec.sing_mass is not None:
-        mass_flag = _first_supported(
-            ["--sing_mass", "--singularity_mass", "--mass"], supported
-        )
+        mass_flag = _first_supported(["--sing_mass", "--singularity_mass", "--mass"], supported)
         if mass_flag:
             cmd += [mass_flag, str(spec.sing_mass)]
 
@@ -244,9 +242,7 @@ def run_one(
         "defect_type": spec.defect_type,
         "radius": float(spec.radius),
         "sing_mass": None if spec.sing_mass is None else float(spec.sing_mass),
-        "sing_potential": (
-            None if spec.sing_potential is None else float(spec.sing_potential)
-        ),
+        "sing_potential": (None if spec.sing_potential is None else float(spec.sing_potential)),
         "prefix": prefix,
         "metadata": str(meta_path) if meta_path else None,
         "spectrum": str(spec_path) if spec_path else None,
@@ -260,9 +256,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Run a canonical sweep comparing blackhole/wedge/singularity."
     )
-    p.add_argument(
-        "--run_batch", default="scripts/run_batch.py", help="Path to batch runner."
-    )
+    p.add_argument("--run_batch", default="scripts/run_batch.py", help="Path to batch runner.")
     p.add_argument(
         "--outdir",
         default="batch_cli_output_singularity",
@@ -278,9 +272,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--blackhole_radii", default="2.5", help="Comma-separated radii.")
     p.add_argument("--sing_radii", default="0.5,1.0", help="Comma-separated radii.")
 
-    p.add_argument(
-        "--sing_masses", default="50,200", help="Comma-separated masses (if supported)."
-    )
+    p.add_argument("--sing_masses", default="50,200", help="Comma-separated masses (if supported).")
     p.add_argument(
         "--sing_potentials",
         default="0,25",

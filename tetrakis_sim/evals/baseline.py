@@ -28,9 +28,7 @@ def _feature_keys(rows: list[dict[str, Any]]) -> list[str]:
     return sorted(keys)
 
 
-def _vectorize(
-    rows: list[dict[str, Any]], keys: list[str]
-) -> tuple[np.ndarray, list[str]]:
+def _vectorize(rows: list[dict[str, Any]], keys: list[str]) -> tuple[np.ndarray, list[str]]:
     X = np.zeros((len(rows), len(keys)), dtype=float)
     y: list[str] = []
     for i, r in enumerate(rows):
