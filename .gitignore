@@ -77,3 +77,6 @@ notebooks/Untitled*.ipynb
 batch_cli_output/
 out_none/
 out_sing/
+
+# Local backup files
+*.bak.*

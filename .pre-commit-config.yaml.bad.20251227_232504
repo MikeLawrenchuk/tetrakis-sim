@@ -1,5 +1,4 @@
-exclude: '(\.ipynb$|\.bak\.)'
-repos:
+exclude: '\.ipynb$'\nrepos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
