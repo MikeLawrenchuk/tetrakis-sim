@@ -82,3 +82,26 @@ def primes_on_ulam_diagonals(n: int) -> np.ndarray:
 
     diag_mask = (x[prime_vals] == y[prime_vals]) | (x[prime_vals] == -y[prime_vals])
     return prime_vals[diag_mask]
+
+
+
+def primes_on_ulam_diagonals_with_offsets(n: int, kmax: int = 10) -> np.ndarray:
+    """
+    Return primes <= n that lie on offset diagonals:
+      x - y = k  or  x + y = k
+    for some integer k with |k| <= kmax.
+
+    kmax=0 reproduces the “main diagonals only” rule.
+    """
+    is_prime = sieve_primes(n)
+    x, y = ulam_spiral_coords(n)
+
+    values = np.arange(1, n + 1)
+    prime_vals = values[is_prime[1:]]  # aligns is_prime[1] with value=1
+
+    d1 = x[prime_vals] - y[prime_vals]  # x - y
+    d2 = x[prime_vals] + y[prime_vals]  # x + y
+
+    keep = (np.abs(d1) <= kmax) | (np.abs(d2) <= kmax)
+    return prime_vals[keep]
+
