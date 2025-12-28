@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import math
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any, Literal, TypeAlias, overload
 
 import networkx as nx
+
+Node2D: TypeAlias = tuple[int, int, str]
+Node3D: TypeAlias = tuple[int, int, int, str]
+Node: TypeAlias = Node2D | Node3D
+Edge: TypeAlias = tuple[Node, Node]
 
 
 @dataclass(frozen=True)
@@ -18,23 +24,19 @@ class DefectResult:
     graph:
         The mutated graph (identical object passed into the defect helper).
     removed_nodes:
-        Sequence of nodes removed from the graph.  Only populated for defects
+        Sequence of nodes removed from the graph. Only populated for defects
         that physically delete nodes (e.g., the black-hole defect).
     removed_edges:
-        Sequence of edges removed from the graph.  Used for defects such as the
+        Sequence of edges removed from the graph. Used for defects such as the
         wedge deficit which only excises edges.
     metadata:
         Free-form dictionary for future extensions.
     """
 
     graph: nx.Graph
-    removed_nodes: tuple = ()
-    removed_edges: tuple = ()
-    metadata: dict | None = None
-
-    def __post_init__(self) -> None:
-        if self.metadata is None:
-            object.__setattr__(self, "metadata", {})
+    removed_nodes: tuple[Node, ...] = ()
+    removed_edges: tuple[Edge, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __iter__(self):  # pragma: no cover - convenience for unpacking
         yield self.graph
@@ -51,6 +53,26 @@ def _infer_layers(G: nx.Graph) -> list[int]:
     return sorted({node[2] for node in G.nodes if len(node) > 3})
 
 
+@overload
+def apply_wedge_defect(
+    G: nx.Graph,
+    center: tuple[int, int] | None = None,
+    layer: int | None = None,
+    *,
+    return_result: Literal[True],
+) -> DefectResult: ...
+
+
+@overload
+def apply_wedge_defect(
+    G: nx.Graph,
+    center: tuple[int, int] | None = None,
+    layer: int | None = None,
+    *,
+    return_result: Literal[False] = False,
+) -> nx.Graph: ...
+
+
 def apply_wedge_defect(
     G: nx.Graph,
     center: tuple[int, int] | None = None,
@@ -60,17 +82,13 @@ def apply_wedge_defect(
 ) -> nx.Graph | DefectResult:
     """Apply a +45° wedge deficit around the grid centre.
 
-    The classic wedge defect removes the edge between the "A" and "B" vertices
-    of the central cell.  Historically the implementation only worked for 2-D
-    lattices (triplets).  This helper now supports both 2-D and 3-D lattices:
-
     * 2-D: remove the single (A,B) edge at the requested ``center``.
-    * 3-D: remove the (A,B) edge on the specified ``layer``.  If no layer is
-      supplied the central layer is used.  All other layers are left intact.
+    * 3-D: remove the (A,B) edge on the specified ``layer``. If no layer is
+      supplied the central layer is used. All other layers are left intact.
     """
-
     if not G.nodes:
-        return DefectResult(G)
+        result = DefectResult(G)
+        return result if return_result else result.graph
 
     node_length = len(next(iter(G.nodes)))
     if node_length not in (3, 4):
@@ -79,19 +97,21 @@ def apply_wedge_defect(
     if center is None:
         center = _infer_center_coordinates(G)
 
-    removed_edges: list[tuple] = []
+    removed_edges: list[Edge] = []
 
     if node_length == 3:
-        edge = ((center[0], center[1], "A"), (center[0], center[1], "B"))
-        if G.has_edge(*edge):
-            G.remove_edge(*edge)
-            removed_edges.append(edge)
+        edge2d: Edge = (
+            (center[0], center[1], "A"),
+            (center[0], center[1], "B"),
+        )
+        if G.has_edge(*edge2d):
+            G.remove_edge(*edge2d)
+            removed_edges.append(edge2d)
         else:  # pragma: no cover - defensive fallback
             warnings.warn(f"No wedge edge found at {center} to remove.")
         result = DefectResult(G, removed_edges=tuple(removed_edges))
         return result if return_result else result.graph
 
-    # 3-D lattice handling
     layers = _infer_layers(G)
     if not layers:
         raise ValueError("Expected z-layer component for 3-D wedge defect")
@@ -102,17 +122,37 @@ def apply_wedge_defect(
     if layer not in layers:
         raise ValueError(f"Layer {layer} is outside of lattice range {layers}")
 
-    edge = (
+    edge3d: Edge = (
         (center[0], center[1], layer, "A"),
         (center[0], center[1], layer, "B"),
     )
-    if G.has_edge(*edge):
-        G.remove_edge(*edge)
-        removed_edges.append(edge)
+    if G.has_edge(*edge3d):
+        G.remove_edge(*edge3d)
+        removed_edges.append(edge3d)
     else:  # pragma: no cover - defensive fallback
         warnings.warn(f"No wedge edge found at {center} on layer {layer} to remove.")
     result = DefectResult(G, removed_edges=tuple(removed_edges))
     return result if return_result else result.graph
+
+
+@overload
+def apply_blackhole_defect(
+    G: nx.Graph,
+    center: tuple[int, ...],
+    radius: float,
+    *,
+    return_result: Literal[True],
+) -> DefectResult: ...
+
+
+@overload
+def apply_blackhole_defect(
+    G: nx.Graph,
+    center: tuple[int, ...],
+    radius: float,
+    *,
+    return_result: Literal[False] = False,
+) -> list[Node]: ...
 
 
 def apply_blackhole_defect(
@@ -121,15 +161,14 @@ def apply_blackhole_defect(
     radius: float,
     *,
     return_result: bool = False,
-) -> list | DefectResult:
+) -> list[Node] | DefectResult:
     """Remove all nodes within ``radius`` of ``center``.
 
-    The return value retains the previous behaviour of returning the list of
-    removed nodes while also bundling the mutated graph and providing a uniform
-    :class:`DefectResult` container that other defects now use as well.
+    Default return retains legacy behaviour (list of removed nodes).
+    If return_result=True, returns a DefectResult container.
     """
+    nodes_to_remove: list[Node] = []
 
-    nodes_to_remove: list[tuple] = []
     if len(center) == 2:
         r0, c0 = center
         for node in list(G.nodes):
@@ -142,6 +181,7 @@ def apply_blackhole_defect(
             r, c, z = node[:3]
             if math.sqrt((r - r0) ** 2 + (c - c0) ** 2 + (z - z0) ** 2) < radius:
                 nodes_to_remove.append(node)
+
     G.remove_nodes_from(nodes_to_remove)
     result = DefectResult(G, removed_nodes=tuple(nodes_to_remove))
     return result if return_result else list(result.removed_nodes)
@@ -149,27 +189,18 @@ def apply_blackhole_defect(
 
 def find_event_horizon(
     G: nx.Graph,
-    removed_nodes: list,
+    removed_nodes: list[Node],
     radius: float,
     center: tuple[int, ...],
     *,
     adjacency_graph: nx.Graph | None = None,
-) -> list:
-    """
-    Finds nodes just outside the black hole (event horizon):
-    nodes within one grid spacing of the radius AND adjacent to removed nodes.
-
-    Important:
-    If the black-hole defect removed nodes from G, those removed nodes will no
-    longer appear in G.neighbors(...). In that case, pass the *pre-defect*
-    graph as adjacency_graph so adjacency to removed nodes can be evaluated.
-    """
-    horizon = set()
+) -> list[Node]:
+    """Find nodes just outside the black hole (event horizon)."""
+    horizon: set[Node] = set()
     removed_set = set(removed_nodes)
     adjG = adjacency_graph or G
 
     for node in G.nodes:
-        # Compute distance from center
         if len(center) == 2:
             r, c = node[:2]
             dist = math.hypot(r - center[0], c - center[1])
@@ -179,7 +210,6 @@ def find_event_horizon(
                 (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
             )
 
-        # "Shell" just outside radius, and must touch a removed node
         if radius - 1 <= dist < radius + 1:
             if any(neigh in removed_set for neigh in adjG.neighbors(node)):
                 horizon.add(node)
@@ -193,24 +223,9 @@ def apply_defect(
     *,
     return_removed: bool = False,
     **kwargs,
-) -> nx.Graph | tuple[nx.Graph, list]:
-    """Dispatch onto the requested defect helper.
-
-    Parameters
-    ----------
-    G:
-        Graph to mutate in-place.
-    defect_type:
-        One of ``"wedge"``, ``"blackhole"``, ``"singularity"``  or ``"none"``.
-    return_removed:
-        If ``True`` the function returns ``(graph, removed_nodes)`` for
-        backwards compatibility with legacy call-sites that only required the
-        graph.  The more expressive :class:`DefectResult` is always returned to
-        callers using :func:`apply_wedge_defect` or :func:`apply_blackhole_defect`
-        directly.
-    **kwargs:
-        Forwarded to the specific defect helper.
-    """
+) -> nx.Graph | tuple[nx.Graph, list[Node]]:
+    """Dispatch onto the requested defect helper."""
+    result: DefectResult
 
     if defect_type == "none":
         result = DefectResult(G)
@@ -220,13 +235,38 @@ def apply_defect(
         result = apply_blackhole_defect(G, return_result=True, **kwargs)
     elif defect_type == "singularity":
         result = apply_singularity_defect(G, return_result=True, **kwargs)
-
     else:
         raise ValueError(f"Unsupported defect type '{defect_type}'")
 
     if return_removed:
         return result.graph, list(result.removed_nodes)
     return result.graph
+
+
+@overload
+def apply_singularity_defect(
+    G: nx.Graph,
+    center: tuple[int, ...],
+    *,
+    mass: float = 1000.0,
+    potential: float = 0.0,
+    radius: float = 0.0,
+    prune_edges: bool = False,
+    return_result: Literal[True],
+) -> DefectResult: ...
+
+
+@overload
+def apply_singularity_defect(
+    G: nx.Graph,
+    center: tuple[int, ...],
+    *,
+    mass: float = 1000.0,
+    potential: float = 0.0,
+    radius: float = 0.0,
+    prune_edges: bool = False,
+    return_result: Literal[False] = False,
+) -> nx.Graph: ...
 
 
 def apply_singularity_defect(
@@ -239,30 +279,13 @@ def apply_singularity_defect(
     prune_edges: bool = False,
     return_result: bool = False,
 ) -> nx.Graph | DefectResult:
-    """
-    "Naked singularity" defect: do NOT delete nodes.
-    Instead, tag nodes near the center with large mass and/or potential.
-    Optionally prune edges within a radius to create a sharp local topology change.
-
-    Parameters
-    ----------
-    center:
-        (r,c) for 2D or (r,c,z) for 3D.
-    mass:
-        Large mass makes the node respond less to Laplacian forcing.
-    potential:
-        Local restoring potential term; positive acts like a local "pinning".
-    radius:
-        Nodes with dist <= radius are tagged.
-    prune_edges:
-        If True, remove all edges incident to tagged nodes (extreme scattering).
-    """
+    """Naked singularity defect: tag nodes near the center (no deletions)."""
     if not G.nodes:
         result = DefectResult(G)
         return result if return_result else result.graph
 
-    tagged_nodes: list[tuple] = []
-    removed_edges: list[tuple] = []
+    tagged_nodes: list[Node] = []
+    removed_edges: list[Edge] = []
 
     for node in list(G.nodes):
         if len(center) == 2:
@@ -276,7 +299,6 @@ def apply_singularity_defect(
 
         if dist <= radius:
             tagged_nodes.append(node)
-            # Attach physics parameters as node attributes
             G.nodes[node]["mass"] = float(mass)
             G.nodes[node]["potential"] = float(potential)
             G.nodes[node]["singular"] = True
@@ -290,7 +312,7 @@ def apply_singularity_defect(
 
     result = DefectResult(
         G,
-        removed_nodes=tuple(),  # none removed
+        removed_nodes=tuple(),
         removed_edges=tuple(removed_edges),
         metadata={
             "singularity_center": center,
