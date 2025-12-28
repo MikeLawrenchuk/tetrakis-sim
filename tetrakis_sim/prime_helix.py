@@ -13,7 +13,7 @@ add_prime_helix(G, n_rings=100, dtheta=math.radians(1), pitch=1.5)
 
 from __future__ import annotations
 import math
-from typing import List
+from typing import List, Optional, Sequence
 
 import numpy as np
 import networkx as nx
@@ -96,6 +96,7 @@ def add_prime_helix(
     n_rings: int = 100,
     dtheta: float = math.radians(1),
     pitch: float = 1.5,
+    radii: Optional[Sequence[int]] = None,
 ) -> None:
     """
     Append `n_rings` rotated prime diamonds to graph *G*.
@@ -103,10 +104,10 @@ def add_prime_helix(
     Each node receives attributes:
     -------------------------------
     pos  : tuple[float, float, float]   3-D coordinates
-    ring : int                          ring index (0 = p₂)
+    ring : int                          ring index (0 = first ring)
     prime_radius : int                  prime radius (2, 3, 5, …)
     """
-    primes = _first_primes(n_rings)
+    primes = _first_primes(n_rings) if radii is None else list(radii)[:n_rings]
 
     for k, p in enumerate(primes):
         verts = _rotated_lifted(p, k * dtheta, k * pitch)
@@ -114,10 +115,13 @@ def add_prime_helix(
         prev_id = None
         for j, (x, y, z) in enumerate(verts):
             node_id = (k, j)                   # unique & hashable
-            G.add_node(node_id,
-                       pos=(float(x), float(y), float(z)),
-                       ring=k,
-                       prime_radius=p)
+            G.add_node(
+                node_id,
+                pos=(float(x), float(y), float(z)),
+                ring=k,
+                prime_radius=int(p),
+            )
             if prev_id is not None:
                 G.add_edge(prev_id, node_id, ring=k)
             prev_id = node_id
+
