@@ -58,6 +58,7 @@ tetrakis-batch = "tetrakis_sim.batch:main"
 
 
 
+tetrakis-eval = "tetrakis_sim.evals.cli:main"
 [project.urls]
 Homepage = "https://mikelawrenchuk.github.io/"
 Repository = "https://github.com/MikeLawrenchuk/tetrakis-sim"
