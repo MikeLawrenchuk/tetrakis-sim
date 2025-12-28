@@ -80,3 +80,5 @@ out_sing/
 
 # Local backup files
 *.bak.*
+
+.pre-commit-config.yaml.bad.*
