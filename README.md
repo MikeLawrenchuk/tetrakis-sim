@@ -197,6 +197,7 @@ tetrakis-batch --dim 3 --size 13 --layers 7 \
 
 ## Documentation
 
+* **Model & validation:** `docs/model_and_validation.md`
 * **Source code:** See `tetrakis_sim/`
 * **Notebooks:** See `notebooks/analyze_batch_outputs.ipynb` for batch data analysis.
 * **Batch runner:** `tetrakis-batch --help` (or `python scripts/run_batch.py --help` when running from a clone)
