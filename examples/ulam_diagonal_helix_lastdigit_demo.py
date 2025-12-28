@@ -57,9 +57,7 @@ def main() -> None:
 
     if n_rings > len(radii_all):
         n_rings = len(radii_all)
-        print(
-            f"Note: only {n_rings} diagonal primes available up to ULAM_N; using all of them."
-        )
+        print(f"Note: only {n_rings} diagonal primes available up to ULAM_N; using all of them.")
 
     print(f"ULAM_N={ULAM_N}  KMAX={KMAX}  pool={len(radii_all)}  using_rings={n_rings}")
 

@@ -155,9 +155,7 @@ def find_event_horizon(
             dist = math.hypot(r - center[0], c - center[1])
         else:
             r, c, z = node[:3]
-            dist = math.sqrt(
-                (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
-            )
+            dist = math.sqrt((r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2)
 
         if radius - 1 <= dist < radius + 1:
             if any(neigh in removed_set for neigh in adjG.neighbors(node)):
@@ -182,13 +180,9 @@ def apply_defect(
     elif defect_type == "wedge":
         result = cast(DefectResult, apply_wedge_defect(G, return_result=True, **kwargs))
     elif defect_type == "blackhole":
-        result = cast(
-            DefectResult, apply_blackhole_defect(G, return_result=True, **kwargs)
-        )
+        result = cast(DefectResult, apply_blackhole_defect(G, return_result=True, **kwargs))
     elif defect_type == "singularity":
-        result = cast(
-            DefectResult, apply_singularity_defect(G, return_result=True, **kwargs)
-        )
+        result = cast(DefectResult, apply_singularity_defect(G, return_result=True, **kwargs))
     else:
         raise ValueError(f"Unsupported defect type '{defect_type}'")
 
@@ -222,9 +216,7 @@ def apply_singularity_defect(
             dist = math.hypot(r - center[0], c - center[1])
         else:
             r, c, z = node[:3]
-            dist = math.sqrt(
-                (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
-            )
+            dist = math.sqrt((r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2)
 
         if dist <= radius:
             tagged_nodes.append(node)

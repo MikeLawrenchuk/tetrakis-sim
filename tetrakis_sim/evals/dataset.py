@@ -33,9 +33,7 @@ def _pick_kick_node(G: Any, center: tuple[int, ...], dim: int) -> Any:
         return (r - center[0]) ** 2 + (c - center[1]) ** 2
 
     candidates = [
-        n
-        for n in nodes
-        if G.degree[n] > 0 and not bool(G.nodes[n].get("singular", False))
+        n for n in nodes if G.degree[n] > 0 and not bool(G.nodes[n].get("singular", False))
     ]
     pool = candidates if candidates else nodes
     return min(pool, key=dist2)
@@ -46,9 +44,7 @@ def _graph_features(G: Any, removed_nodes: list[Any]) -> dict[str, float]:
     m = float(G.number_of_edges())
     avg_degree = float((2.0 * m / n) if n > 0 else 0.0)
     max_degree = float(max((G.degree[v] for v in G.nodes), default=0))
-    singular_count = float(
-        sum(1 for v in G.nodes if bool(G.nodes[v].get("singular", False)))
-    )
+    singular_count = float(sum(1 for v in G.nodes if bool(G.nodes[v].get("singular", False))))
     return {
         "n_nodes": n,
         "n_edges": m,
@@ -121,9 +117,7 @@ def generate_defect_classification_jsonl(
                     "potential": pot,
                     "prune_edges": prune,
                 }
-                params.update(
-                    {"radius": sr, "mass": mass, "potential": pot, "prune_edges": prune}
-                )
+                params.update({"radius": sr, "mass": mass, "potential": pot, "prune_edges": prune})
 
             removed_nodes: list[Any] = []
             if defect_type != "none":

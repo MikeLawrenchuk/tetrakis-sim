@@ -125,11 +125,7 @@ def test_event_horizon_nodes_touch_removed_nodes_2d():
 
     removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
 
-    horizon = set(
-        find_event_horizon(
-            G1, removed, radius=radius, center=center, adjacency_graph=G0
-        )
-    )
+    horizon = set(find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0))
     assert horizon, "Expected a non-empty horizon for this radius/center."
 
     for n in horizon:
@@ -147,11 +143,7 @@ def test_event_horizon_excludes_removed_nodes():
     G1 = build_sheet(size=size, dim=2)
     removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
 
-    horizon = set(
-        find_event_horizon(
-            G1, removed, radius=radius, center=center, adjacency_graph=G0
-        )
-    )
+    horizon = set(find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0))
     assert horizon.isdisjoint(removed), "Horizon must not include removed nodes."
 
 

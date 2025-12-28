@@ -103,9 +103,7 @@ def triangles(G: nx.Graph) -> list[tuple[Any, Any, Any]]:
                     tri = tuple(sorted((u, v, w), key=_node_key))
                     tris.add(tri)
 
-    return sorted(
-        tris, key=lambda t: (_node_key(t[0]), _node_key(t[1]), _node_key(t[2]))
-    )
+    return sorted(tris, key=lambda t: (_node_key(t[0]), _node_key(t[1]), _node_key(t[2])))
 
 
 def _angle(pu: np.ndarray, pv: np.ndarray, pw: np.ndarray) -> float:
@@ -295,9 +293,7 @@ def curvature_report(
     if centers is None:
         centers = infer_singularity_centers(G)
 
-    global_def = angle_deficit(
-        G, pos=pos, use_boundary_correction=use_boundary_correction
-    )
+    global_def = angle_deficit(G, pos=pos, use_boundary_correction=use_boundary_correction)
     global_summary = summarize_deficits(global_def).as_dict()
 
     near_summary: dict[str, float] | None = None
