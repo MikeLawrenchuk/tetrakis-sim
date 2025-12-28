@@ -1,15 +1,14 @@
 # tests/test_invariants.py
 
 import math
+
 import networkx as nx
 import numpy as np
 import pytest
 
+from tetrakis_sim.defects import apply_blackhole_defect, find_event_horizon
 from tetrakis_sim.lattice import build_sheet
-from tetrakis_sim.defects import apply_blackhole_defect
 from tetrakis_sim.physics import SimulationHistory, run_fft, run_wave_sim
-from tetrakis_sim.defects import find_event_horizon
-
 
 
 def _rotate90_2d(node, size: int):
@@ -94,16 +93,15 @@ def test_wave_sim_enforces_cfl_limit_and_stays_bounded():
     assert np.max(np.abs(arr)) < 1e3  # generous cap; catches true explosions
 
 
-
 def test_fft_detects_known_sine_frequency():
     """
     FFT sanity invariant:
     Feed a pure sine wave at frequency f0 into a SimulationHistory with dt.
     The dominant FFT bin should land near +/- f0 (within frequency resolution).
     """
-    f0 = 2.0      # Hz
-    dt = 0.1      # seconds
-    N = 100       # samples -> resolution = 1/(N*dt) = 0.1 Hz
+    f0 = 2.0  # Hz
+    dt = 0.1  # seconds
+    N = 100  # samples -> resolution = 1/(N*dt) = 0.1 Hz
     t = np.arange(N) * dt
 
     values = np.sin(2.0 * np.pi * f0 * t)
@@ -128,14 +126,16 @@ def test_event_horizon_nodes_touch_removed_nodes_2d():
     removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
 
     horizon = set(
-        find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0)
+        find_event_horizon(
+            G1, removed, radius=radius, center=center, adjacency_graph=G0
+        )
     )
     assert horizon, "Expected a non-empty horizon for this radius/center."
 
     for n in horizon:
-        assert any(nb in removed for nb in G0.neighbors(n)), (
-            f"Horizon node {n} has no removed neighbors in the pre-defect graph."
-        )
+        assert any(
+            nb in removed for nb in G0.neighbors(n)
+        ), f"Horizon node {n} has no removed neighbors in the pre-defect graph."
 
 
 def test_event_horizon_excludes_removed_nodes():
@@ -148,7 +148,9 @@ def test_event_horizon_excludes_removed_nodes():
     removed = set(apply_blackhole_defect(G1, center=center, radius=radius))
 
     horizon = set(
-        find_event_horizon(G1, removed, radius=radius, center=center, adjacency_graph=G0)
+        find_event_horizon(
+            G1, removed, radius=radius, center=center, adjacency_graph=G0
+        )
     )
     assert horizon.isdisjoint(removed), "Horizon must not include removed nodes."
 
@@ -198,4 +200,3 @@ def test_fft_frequency_invariant_under_sampling_rate_change():
 
     assert abs(abs(dom_a) - f0) <= res_a + 1e-9
     assert abs(abs(dom_b) - f0) <= res_b + 1e-9
-

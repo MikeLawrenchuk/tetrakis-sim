@@ -22,9 +22,9 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,8 +35,8 @@ import pandas as pd
 class RunSpec:
     defect_type: str
     radius: float
-    sing_mass: Optional[float] = None
-    sing_potential: Optional[float] = None
+    sing_mass: float | None = None
+    sing_potential: float | None = None
 
 
 def _run_help(py: str, run_batch: Path) -> str:
@@ -55,7 +55,7 @@ def _supported_flags(help_text: str) -> set[str]:
     return set(re.findall(r"--[a-zA-Z0-9_\-]+", help_text))
 
 
-def _first_supported(flags: Sequence[str], supported: set[str]) -> Optional[str]:
+def _first_supported(flags: Sequence[str], supported: set[str]) -> str | None:
     for f in flags:
         if f in supported:
             return f
@@ -64,7 +64,7 @@ def _first_supported(flags: Sequence[str], supported: set[str]) -> Optional[str]
 
 def _dominant_from_spectrum(
     csv_path: Path,
-) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+) -> tuple[float | None, float | None, float | None]:
     """
     Return (dominant_freq, centroid, bandwidth) computed from the spectrum CSV.
 
@@ -115,7 +115,7 @@ def _dominant_from_spectrum(
         return None, None, None
 
 
-def _dominant_from_metadata(meta_path: Path) -> Optional[float]:
+def _dominant_from_metadata(meta_path: Path) -> float | None:
     """
     Try to read dominant frequency from the metadata JSON.
 
@@ -158,10 +158,10 @@ def run_one(
     damping: float,
     extra: Sequence[str],
     supported: set[str],
-) -> Dict[str, object]:
+) -> dict[str, object]:
     outdir.mkdir(parents=True, exist_ok=True)
 
-    cmd: List[str] = [
+    cmd: list[str] = [
         py,
         str(run_batch),
         "--size",
@@ -186,7 +186,9 @@ def run_one(
 
     # Optional singularity flags (try common variants)
     if spec.sing_mass is not None:
-        mass_flag = _first_supported(["--sing_mass", "--singularity_mass", "--mass"], supported)
+        mass_flag = _first_supported(
+            ["--sing_mass", "--singularity_mass", "--mass"], supported
+        )
         if mass_flag:
             cmd += [mass_flag, str(spec.sing_mass)]
 
@@ -222,9 +224,9 @@ def run_one(
     meta_path = meta_files[0] if meta_files else None
     spec_path = spectrum_files[0] if spectrum_files else None
 
-    dom: Optional[float] = None
-    centroid: Optional[float] = None
-    bandwidth: Optional[float] = None
+    dom: float | None = None
+    centroid: float | None = None
+    bandwidth: float | None = None
 
     # Read dominant frequency from metadata if present
     if meta_path is not None:
@@ -242,7 +244,9 @@ def run_one(
         "defect_type": spec.defect_type,
         "radius": float(spec.radius),
         "sing_mass": None if spec.sing_mass is None else float(spec.sing_mass),
-        "sing_potential": None if spec.sing_potential is None else float(spec.sing_potential),
+        "sing_potential": (
+            None if spec.sing_potential is None else float(spec.sing_potential)
+        ),
         "prefix": prefix,
         "metadata": str(meta_path) if meta_path else None,
         "spectrum": str(spec_path) if spec_path else None,
@@ -252,12 +256,18 @@ def run_one(
     }
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Run a canonical sweep comparing blackhole/wedge/singularity."
     )
-    p.add_argument("--run_batch", default="scripts/run_batch.py", help="Path to batch runner.")
-    p.add_argument("--outdir", default="batch_cli_output_singularity", help="Where to place outputs.")
+    p.add_argument(
+        "--run_batch", default="scripts/run_batch.py", help="Path to batch runner."
+    )
+    p.add_argument(
+        "--outdir",
+        default="batch_cli_output_singularity",
+        help="Where to place outputs.",
+    )
     p.add_argument("--size", type=int, default=11)
     p.add_argument("--layers", type=int, default=5)
     p.add_argument("--steps", type=int, default=60)
@@ -268,8 +278,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p.add_argument("--blackhole_radii", default="2.5", help="Comma-separated radii.")
     p.add_argument("--sing_radii", default="0.5,1.0", help="Comma-separated radii.")
 
-    p.add_argument("--sing_masses", default="50,200", help="Comma-separated masses (if supported).")
-    p.add_argument("--sing_potentials", default="0,25", help="Comma-separated potentials (if supported).")
+    p.add_argument(
+        "--sing_masses", default="50,200", help="Comma-separated masses (if supported)."
+    )
+    p.add_argument(
+        "--sing_potentials",
+        default="0,25",
+        help="Comma-separated potentials (if supported).",
+    )
 
     p.add_argument(
         "--include",
@@ -280,7 +296,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     p.add_argument(
         "--extra",
         default="",
-        help="Extra args passed through to run_batch (quoted string). Example: '--kick \"(5,5,2,\\\"A\\\")\"'.",
+        help='Extra args passed through to run_batch (quoted string). Example: \'--kick "(5,5,2,\\"A\\")"\'.',
     )
 
     args = p.parse_args(argv)
@@ -293,7 +309,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not supported:
         print("[warn] Could not parse --help; will run with baseline args only.")
 
-    def parse_floats(s: str) -> List[float]:
+    def parse_floats(s: str) -> list[float]:
         return [float(x) for x in s.split(",") if x.strip()]
 
     blackhole_radii = parse_floats(args.blackhole_radii)
@@ -304,7 +320,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     include = [x.strip() for x in args.include.split(",") if x.strip()]
     extra = args.extra.strip().split() if args.extra.strip() else []
 
-    runs: List[RunSpec] = []
+    runs: list[RunSpec] = []
 
     if "blackhole" in include:
         for r in blackhole_radii:
@@ -318,10 +334,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for M in sing_masses:
                 for V in sing_pots:
                     runs.append(
-                        RunSpec(defect_type="singularity", radius=r, sing_mass=M, sing_potential=V)
+                        RunSpec(
+                            defect_type="singularity",
+                            radius=r,
+                            sing_mass=M,
+                            sing_potential=V,
+                        )
                     )
 
-    results: List[Dict[str, object]] = []
+    results: list[dict[str, object]] = []
     for spec in runs:
         rec = run_one(
             sys.executable,

@@ -71,5 +71,3 @@ exclude = ["tests*", "docs*", "examples*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-
-

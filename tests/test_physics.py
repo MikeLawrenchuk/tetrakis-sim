@@ -1,4 +1,5 @@
 import math
+
 import networkx as nx
 import numpy as np
 import pytest
@@ -7,9 +8,11 @@ from tetrakis_sim.defects import apply_wedge_defect
 from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.physics import (
     SimulationHistory,
-    apply_defect as physics_apply_defect,
     run_fft,
     run_wave_sim,
+)
+from tetrakis_sim.physics import (
+    apply_defect as physics_apply_defect,
 )
 
 

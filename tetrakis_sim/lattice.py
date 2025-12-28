@@ -1,13 +1,16 @@
 # tetrakis_sim/lattice.py
 
-import networkx as nx
 from itertools import product
+
+import networkx as nx
+
 
 def clique(G, nodes):
     """Helper to connect all nodes in a clique."""
     for i, v in enumerate(nodes):
-        for w in nodes[i+1:]:
+        for w in nodes[i + 1 :]:
             G.add_edge(v, w)
+
 
 def build_sheet(size=9, dim=2, layers=3):
     """
@@ -42,8 +45,13 @@ def build_sheet(size=9, dim=2, layers=3):
         return G
 
     elif dim == 3:
-        V = [(r, c, z, q) for r in range(size) for c in range(size)
-                                   for z in range(layers) for q in "ABCD"]
+        V = [
+            (r, c, z, q)
+            for r in range(size)
+            for c in range(size)
+            for z in range(layers)
+            for q in "ABCD"
+        ]
         G = nx.Graph()
         G.add_nodes_from(V)
         # Intra-cell, row, col in each floor
@@ -66,6 +74,7 @@ def build_sheet(size=9, dim=2, layers=3):
 
     else:
         raise ValueError("dim must be 2 or 3")
+
 
 # For backward compatibility with your original code
 def build_sheet_3d(size=9, layers=3):

@@ -17,8 +17,8 @@ import math
 from collections import Counter
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 import networkx as nx
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from tetrakis_sim.prime_helix import add_prime_helix
 from tetrakis_sim.ulam import primes_on_ulam_diagonals_with_offsets
@@ -57,10 +57,11 @@ def main() -> None:
 
     if n_rings > len(radii_all):
         n_rings = len(radii_all)
-        print(f"Note: only {n_rings} diagonal primes available up to ULAM_N; using all of them.")
+        print(
+            f"Note: only {n_rings} diagonal primes available up to ULAM_N; using all of them."
+        )
 
     print(f"ULAM_N={ULAM_N}  KMAX={KMAX}  pool={len(radii_all)}  using_rings={n_rings}")
-
 
     radii = radii_all[:n_rings]
 
@@ -134,4 +135,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

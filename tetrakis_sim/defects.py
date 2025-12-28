@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 import warnings
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import networkx as nx
 
@@ -29,9 +28,9 @@ class DefectResult:
     """
 
     graph: nx.Graph
-    removed_nodes: Tuple = ()
-    removed_edges: Tuple = ()
-    metadata: Optional[dict] = None
+    removed_nodes: tuple = ()
+    removed_edges: tuple = ()
+    metadata: dict | None = None
 
     def __post_init__(self) -> None:
         if self.metadata is None:
@@ -41,20 +40,21 @@ class DefectResult:
         yield self.graph
         yield list(self.removed_nodes)
 
-def _infer_center_coordinates(G: nx.Graph) -> Tuple[int, int]:
+
+def _infer_center_coordinates(G: nx.Graph) -> tuple[int, int]:
     rows = sorted({node[0] for node in G.nodes})
     cols = sorted({node[1] for node in G.nodes})
     return rows[len(rows) // 2], cols[len(cols) // 2]
 
 
-def _infer_layers(G: nx.Graph) -> List[int]:
+def _infer_layers(G: nx.Graph) -> list[int]:
     return sorted({node[2] for node in G.nodes if len(node) > 3})
 
 
 def apply_wedge_defect(
     G: nx.Graph,
-    center: Optional[Tuple[int, int]] = None,
-    layer: Optional[int] = None,
+    center: tuple[int, int] | None = None,
+    layer: int | None = None,
     *,
     return_result: bool = False,
 ) -> nx.Graph | DefectResult:
@@ -79,7 +79,7 @@ def apply_wedge_defect(
     if center is None:
         center = _infer_center_coordinates(G)
 
-    removed_edges: List[Tuple] = []
+    removed_edges: list[tuple] = []
 
     if node_length == 3:
         edge = ((center[0], center[1], "A"), (center[0], center[1], "B"))
@@ -110,19 +110,18 @@ def apply_wedge_defect(
         G.remove_edge(*edge)
         removed_edges.append(edge)
     else:  # pragma: no cover - defensive fallback
-        warnings.warn(
-            f"No wedge edge found at {center} on layer {layer} to remove."
-        )
+        warnings.warn(f"No wedge edge found at {center} on layer {layer} to remove.")
     result = DefectResult(G, removed_edges=tuple(removed_edges))
     return result if return_result else result.graph
 
+
 def apply_blackhole_defect(
     G: nx.Graph,
-    center: Tuple[int, ...],
+    center: tuple[int, ...],
     radius: float,
     *,
     return_result: bool = False,
-) -> List | DefectResult:
+) -> list | DefectResult:
     """Remove all nodes within ``radius`` of ``center``.
 
     The return value retains the previous behaviour of returning the list of
@@ -130,7 +129,7 @@ def apply_blackhole_defect(
     :class:`DefectResult` container that other defects now use as well.
     """
 
-    nodes_to_remove: List[Tuple] = []
+    nodes_to_remove: list[tuple] = []
     if len(center) == 2:
         r0, c0 = center
         for node in list(G.nodes):
@@ -147,14 +146,15 @@ def apply_blackhole_defect(
     result = DefectResult(G, removed_nodes=tuple(nodes_to_remove))
     return result if return_result else list(result.removed_nodes)
 
+
 def find_event_horizon(
     G: nx.Graph,
-    removed_nodes: List,
+    removed_nodes: list,
     radius: float,
-    center: Tuple[int, ...],
+    center: tuple[int, ...],
     *,
-    adjacency_graph: Optional[nx.Graph] = None,
-) -> List:
+    adjacency_graph: nx.Graph | None = None,
+) -> list:
     """
     Finds nodes just outside the black hole (event horizon):
     nodes within one grid spacing of the radius AND adjacent to removed nodes.
@@ -176,9 +176,7 @@ def find_event_horizon(
         else:
             r, c, z = node[:3]
             dist = math.sqrt(
-                (r - center[0]) ** 2
-                + (c - center[1]) ** 2
-                + (z - center[2]) ** 2
+                (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
             )
 
         # "Shell" just outside radius, and must touch a removed node
@@ -195,7 +193,7 @@ def apply_defect(
     *,
     return_removed: bool = False,
     **kwargs,
-) -> nx.Graph | Tuple[nx.Graph, List]:
+) -> nx.Graph | tuple[nx.Graph, list]:
     """Dispatch onto the requested defect helper.
 
     Parameters
@@ -233,7 +231,7 @@ def apply_defect(
 
 def apply_singularity_defect(
     G: nx.Graph,
-    center: Tuple[int, ...],
+    center: tuple[int, ...],
     *,
     mass: float = 1000.0,
     potential: float = 0.0,
@@ -263,8 +261,8 @@ def apply_singularity_defect(
         result = DefectResult(G)
         return result if return_result else result.graph
 
-    tagged_nodes: List[Tuple] = []
-    removed_edges: List[Tuple] = []
+    tagged_nodes: list[tuple] = []
+    removed_edges: list[tuple] = []
 
     for node in list(G.nodes):
         if len(center) == 2:
@@ -304,4 +302,3 @@ def apply_singularity_defect(
         },
     )
     return result if return_result else result.graph
-

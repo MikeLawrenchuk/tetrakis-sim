@@ -12,11 +12,12 @@ add_prime_helix(G, n_rings=100, dtheta=math.radians(1), pitch=1.5)
 """
 
 from __future__ import annotations
-import math
-from typing import List, Optional, Sequence
 
-import numpy as np
+import math
+from collections.abc import Sequence
+
 import networkx as nx
+import numpy as np
 
 __all__ = ["add_prime_helix"]
 
@@ -25,7 +26,8 @@ __all__ = ["add_prime_helix"]
 # Prime sequence helper
 # ---------------------------------------------------------------------------
 
-def _first_primes(count: int) -> List[int]:
+
+def _first_primes(count: int) -> list[int]:
     """Return the first ``count`` prime numbers."""
 
     if count <= 0:
@@ -44,7 +46,7 @@ def _first_primes(count: int) -> List[int]:
         for p in range(2, limit + 1):
             if sieve[p]:
                 step_start = p * p
-                sieve[step_start:upper_bound + 1:p] = [False] * (
+                sieve[step_start : upper_bound + 1 : p] = [False] * (
                     ((upper_bound - step_start) // p) + 1
                 )
 
@@ -59,15 +61,19 @@ def _first_primes(count: int) -> List[int]:
 # Low-level geometry helpers
 # ---------------------------------------------------------------------------
 
+
 def _diamond_L1(radius: float) -> np.ndarray:
     """Return 5×2 array of vertices for ‖(x,y)‖₁ = radius (closed path)."""
-    return np.array([
-        ( radius, 0),
-        ( 0,  radius),
-        (-radius, 0),
-        ( 0, -radius),
-        ( radius, 0),
-    ], dtype=float)
+    return np.array(
+        [
+            (radius, 0),
+            (0, radius),
+            (-radius, 0),
+            (0, -radius),
+            (radius, 0),
+        ],
+        dtype=float,
+    )
 
 
 def _rotated_lifted(radius: float, theta: float, z: float) -> np.ndarray:
@@ -80,9 +86,8 @@ def _rotated_lifted(radius: float, theta: float, z: float) -> np.ndarray:
         Ordered vertices (x,y,z) tracing the diamond.
     """
     c, s = math.cos(theta), math.sin(theta)
-    R = np.array([[c, -s],
-                  [s,  c]])
-    xy = (R @ _diamond_L1(radius).T).T        # (5,2)
+    R = np.array([[c, -s], [s, c]])
+    xy = (R @ _diamond_L1(radius).T).T  # (5,2)
     zcol = np.full((xy.shape[0], 1), z)
     return np.hstack([xy, zcol])
 
@@ -91,12 +96,13 @@ def _rotated_lifted(radius: float, theta: float, z: float) -> np.ndarray:
 # Public builder
 # ---------------------------------------------------------------------------
 
+
 def add_prime_helix(
     G: nx.Graph,
     n_rings: int = 100,
     dtheta: float = math.radians(1),
     pitch: float = 1.5,
-    radii: Optional[Sequence[int]] = None,
+    radii: Sequence[int] | None = None,
 ) -> None:
     """
     Append `n_rings` rotated prime diamonds to graph *G*.
@@ -114,7 +120,7 @@ def add_prime_helix(
 
         prev_id = None
         for j, (x, y, z) in enumerate(verts):
-            node_id = (k, j)                   # unique & hashable
+            node_id = (k, j)  # unique & hashable
             G.add_node(
                 node_id,
                 pos=(float(x), float(y), float(z)),
@@ -124,4 +130,3 @@ def add_prime_helix(
             if prev_id is not None:
                 G.add_edge(prev_id, node_id, ring=k)
             prev_id = node_id
-

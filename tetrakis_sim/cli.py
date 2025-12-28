@@ -1,8 +1,8 @@
 import argparse
 import ast
 
-from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.defects import apply_defect
+from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.physics import run_fft, run_wave_sim
 from tetrakis_sim.plot import plot_fft, plot_lattice
 
@@ -12,7 +12,9 @@ def main() -> None:
         description="Tetrakis-Sim: Discrete Geometry Simulator (quick interactive CLI)"
     )
 
-    parser.add_argument("--dim", type=int, default=2, choices=[2, 3], help="Dimension (2 or 3)")
+    parser.add_argument(
+        "--dim", type=int, default=2, choices=[2, 3], help="Dimension (2 or 3)"
+    )
     parser.add_argument("--size", type=int, default=30, help="Grid size (NxN or NxNxN)")
     parser.add_argument(
         "--layers",
@@ -39,8 +41,12 @@ def main() -> None:
     )
 
     # Singularity parameters
-    parser.add_argument("--sing_mass", type=float, default=1000.0, help="Singularity mass")
-    parser.add_argument("--sing_potential", type=float, default=0.0, help="Singularity potential")
+    parser.add_argument(
+        "--sing_mass", type=float, default=1000.0, help="Singularity mass"
+    )
+    parser.add_argument(
+        "--sing_potential", type=float, default=0.0, help="Singularity potential"
+    )
     parser.add_argument(
         "--sing_radius",
         type=float,
@@ -61,7 +67,9 @@ def main() -> None:
         choices=["none", "wave", "fft"],
         help="Physics model (none, wave, fft)",
     )
-    parser.add_argument("--steps", type=int, default=100, help="Number of simulation steps")
+    parser.add_argument(
+        "--steps", type=int, default=100, help="Number of simulation steps"
+    )
     parser.add_argument("--c", type=float, default=1.0, help="Wave speed")
     parser.add_argument("--dt", type=float, default=0.2, help="Time step size")
     parser.add_argument("--damping", type=float, default=0.0, help="Damping")
@@ -71,7 +79,7 @@ def main() -> None:
         "--kick",
         type=str,
         default=None,
-        help='Kick node tuple as a Python literal, e.g. "(10,10,\'A\')" or "(10,10,2,\'A\')"',
+        help="Kick node tuple as a Python literal, e.g. \"(10,10,'A')\" or \"(10,10,2,'A')\"",
     )
     parser.add_argument("--plot", action="store_true", help="Visualize output")
     parser.add_argument(
@@ -147,7 +155,9 @@ def main() -> None:
                 nodes = list(G.nodes)
 
             candidates = [
-                n for n in nodes if G.degree[n] > 0 and not G.nodes[n].get("singular", False)
+                n
+                for n in nodes
+                if G.degree[n] > 0 and not G.nodes[n].get("singular", False)
             ]
             pool = candidates if candidates else nodes
             initial_node = min(pool, key=_distance_sq)

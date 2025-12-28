@@ -34,4 +34,3 @@ htmlcov/
 
 # Project-specific files you don’t want in Docker
 template.py
-
