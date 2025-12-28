@@ -1,13 +1,13 @@
 import math
-from typing import Sequence, Tuple
+from collections.abc import Sequence
 
 import pytest
 
-from tetrakis_sim.lattice import build_sheet
 from tetrakis_sim.defects import apply_defect, apply_singularity_defect
+from tetrakis_sim.lattice import build_sheet
 
 
-def _dist(node: Tuple, center: Tuple[int, ...]) -> float:
+def _dist(node: tuple, center: tuple[int, ...]) -> float:
     """
     Mirror the distance logic in apply_singularity_defect:
       - center=(r,c) uses node[:2]
@@ -17,12 +17,10 @@ def _dist(node: Tuple, center: Tuple[int, ...]) -> float:
         r, c = node[:2]
         return math.hypot(r - center[0], c - center[1])
     r, c, z = node[:3]
-    return math.sqrt(
-        (r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2
-    )
+    return math.sqrt((r - center[0]) ** 2 + (c - center[1]) ** 2 + (z - center[2]) ** 2)
 
 
-def _tagged_nodes(G, center: Tuple[int, ...], radius: float) -> Sequence[Tuple]:
+def _tagged_nodes(G, center: tuple[int, ...], radius: float) -> Sequence[tuple]:
     return [n for n in G.nodes if _dist(n, center) <= radius]
 
 
@@ -100,7 +98,9 @@ def test_singularity_prune_edges_isolates_tagged_nodes_2d():
     )
 
     tagged = list(_tagged_nodes(G, center, radius))
-    assert tagged, "Expected at least one tagged node at radius=0 for an on-lattice center."
+    assert (
+        tagged
+    ), "Expected at least one tagged node at radius=0 for an on-lattice center."
 
     # With prune_edges=True, all tagged nodes should become isolated (degree 0)
     for n in tagged:
@@ -109,7 +109,9 @@ def test_singularity_prune_edges_isolates_tagged_nodes_2d():
 
     e1 = G.number_of_edges()
     assert e1 < e0, "Edge count should decrease when pruning is enabled."
-    assert (e0 - e1) == len(result.removed_edges), "Removed-edge list should match the edge delta."
+    assert (e0 - e1) == len(
+        result.removed_edges
+    ), "Removed-edge list should match the edge delta."
 
     # Every removed edge must touch a tagged node
     tagged_set = set(tagged)

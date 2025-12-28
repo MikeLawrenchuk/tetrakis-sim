@@ -27,7 +27,29 @@ def test_sieve_primes_basic() -> None:
         assert is_prime[p]
 
     # Known composites / non-primes
-    for n in (0, 1, 4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 30):
+    for n in (
+        0,
+        1,
+        4,
+        6,
+        8,
+        9,
+        10,
+        12,
+        14,
+        15,
+        16,
+        18,
+        20,
+        21,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+    ):
         assert not is_prime[n]
 
 

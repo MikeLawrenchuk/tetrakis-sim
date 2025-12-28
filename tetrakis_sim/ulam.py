@@ -84,7 +84,6 @@ def primes_on_ulam_diagonals(n: int) -> np.ndarray:
     return prime_vals[diag_mask]
 
 
-
 def primes_on_ulam_diagonals_with_offsets(n: int, kmax: int = 10) -> np.ndarray:
     """
     Return primes <= n that lie on offset diagonals:
@@ -104,4 +103,3 @@ def primes_on_ulam_diagonals_with_offsets(n: int, kmax: int = 10) -> np.ndarray:
 
     keep = (np.abs(d1) <= kmax) | (np.abs(d2) <= kmax)
     return prime_vals[keep]
-

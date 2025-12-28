@@ -6,14 +6,15 @@ import importlib
 import importlib.util
 import os
 import warnings
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import networkx as nx
-
 
 # ---------------------------------------------------------------------------
 # Optional plotting backends
 # ---------------------------------------------------------------------------
+
+plt: Any
 
 _matplotlib_pkg = importlib.util.find_spec("matplotlib")
 _mpl_spec = None
@@ -53,11 +54,14 @@ def _warn_no_matplotlib() -> None:
         )
         _WARNED_NO_MATPLOTLIB = True
 
+
 if _HAS_MATPLOTLIB:
     _mplot3d_spec = importlib.util.find_spec("mpl_toolkits.mplot3d")
     if _mplot3d_spec is not None:
         importlib.import_module("mpl_toolkits.mplot3d")
 
+
+go: Any
 
 _plotly_pkg = importlib.util.find_spec("plotly")
 _plotly_spec = None
@@ -107,17 +111,18 @@ def _warn_no_plotly() -> None:
         )
         _WARNED_NO_PLOTLY = True
 
+
 def plot_floor_with_circle(
     G: nx.Graph,
     z: int,
-    center: Tuple[int, int, int],
+    center: tuple[int, int, int],
     radius: float,
-    highlight_nodes: Optional[List[Any]] = None,
-    boundary_nodes: Optional[List[Any]] = None,
-    data: Optional[dict] = None,
-    figsize: Tuple[int, int] = (7, 7),
+    highlight_nodes: list[Any] | None = None,
+    boundary_nodes: list[Any] | None = None,
+    data: dict | None = None,
+    figsize: tuple[int, int] = (7, 7),
     show: bool = True,
-    save: Optional[str] = None
+    save: str | None = None,
 ):
     """
     Plots a single floor (z layer) of a 3D tetrakis lattice, optionally
@@ -130,10 +135,12 @@ def plot_floor_with_circle(
 
     nodes_on_layer = [n for n in G if n[2] == z]
     H = G.subgraph(nodes_on_layer)
+
     def node_pos(node):
         r, c, z, q = node
         offset = 0.18 * "ABCD".index(q)
         return (r + offset, c + offset)
+
     pos = {n: node_pos(n) for n in nodes_on_layer}
 
     plt.figure(figsize=figsize)
@@ -144,35 +151,62 @@ def plot_floor_with_circle(
         nodes = list(H.nodes)
         xs, ys = zip(*[pos[n] for n in nodes])
         vals = [data.get(n, 0.0) for n in nodes]
-        sc = plt.scatter(xs, ys, c=vals, cmap='coolwarm', s=120, zorder=20)
+        sc = plt.scatter(xs, ys, c=vals, cmap="coolwarm", s=120, zorder=20)
         plt.colorbar(sc, label="Wave amplitude")
 
     # Plot removed (black hole) nodes as empty circles
     if highlight_nodes:
         nodes = [n for n in highlight_nodes if len(n) > 2 and n[2] == z]
         if nodes:
+
             def raw_node_pos(node):
                 r, c, z, q = node
                 offset = 0.18 * "ABCD".index(q)
                 return (r + offset, c + offset)
+
             xs, ys = zip(*[raw_node_pos(n) for n in nodes])
-            plt.scatter(xs, ys, s=200, c='none', edgecolors='black', linewidths=2, label='Black Hole (removed)', zorder=10)
+            plt.scatter(
+                xs,
+                ys,
+                s=200,
+                c="none",
+                edgecolors="black",
+                linewidths=2,
+                label="Black Hole (removed)",
+                zorder=10,
+            )
     # Event horizon nodes
     if boundary_nodes:
         nodes = [n for n in boundary_nodes if n[2] == z]
         if nodes:
             xs, ys = zip(*[pos[n] for n in nodes])
-            plt.scatter(xs, ys, s=200, c='gold', edgecolors='red', label='Event Horizon', zorder=11)
+            plt.scatter(
+                xs,
+                ys,
+                s=200,
+                c="gold",
+                edgecolors="red",
+                label="Event Horizon",
+                zorder=11,
+            )
 
     # Overlay event horizon as a circle
     r0, c0, _ = center
-    circle = plt.Circle((r0, c0), radius, color='gold', fill=False, linewidth=2, linestyle='--', alpha=0.6)
+    circle = plt.Circle(
+        (r0, c0),
+        radius,
+        color="gold",
+        fill=False,
+        linewidth=2,
+        linestyle="--",
+        alpha=0.6,
+    )
     plt.gca().add_patch(circle)
     plt.title(f"Tetrakis Lattice – Floor z={z} (Analytical Horizon)")
-    plt.axis('equal')
+    plt.axis("equal")
     plt.legend()
     if save is not None:
-        plt.savefig(save, dpi=180, bbox_inches='tight')
+        plt.savefig(save, dpi=180, bbox_inches="tight")
     if show:
         plt.show()
     plt.close()
@@ -181,10 +215,10 @@ def plot_floor_with_circle(
 def plot_lattice(
     G: nx.Graph,
     data=None,
-    title: Optional[str] = None,
+    title: str | None = None,
     figsize=(8, 8),
-    save: Optional[str] = None,
-    layer: Optional[int] = None,
+    save: str | None = None,
+    layer: int | None = None,
 ):
     """
     Plot a general 2D or 3D lattice (shows only present nodes/edges).
@@ -202,10 +236,12 @@ def plot_lattice(
         return None
 
     if all(len(n) == 3 for n in nodes):  # 2D: (r, c, q)
+
         def node_pos(node):
             r, c, q = node
             offset = 0.18 * "ABCD".index(q)
             return (r + offset, c + offset)
+
         plot_nodes = nodes
         pos = {n: node_pos(n) for n in plot_nodes}
         H = G
@@ -220,10 +256,12 @@ def plot_lattice(
         if not plot_nodes:
             print(f"Warning: No nodes found on layer {layer}.")
             return None
+
         def node_pos(node):
             r, c, z, q = node
             offset = 0.18 * "ABCD".index(q)
             return (r + offset, c + offset)
+
         pos = {n: node_pos(n) for n in plot_nodes}
         H = G.subgraph(plot_nodes)
     else:
@@ -234,14 +272,15 @@ def plot_lattice(
         # For node coloring, overlay scatter
         xs, ys = zip(*[pos[n] for n in plot_nodes])
         colors = [data.get(n, 0.5) for n in plot_nodes]
-        plt.scatter(xs, ys, c=colors, cmap='viridis', s=100)
+        plt.scatter(xs, ys, c=colors, cmap="viridis", s=100)
     if title:
         plt.title(title)
-    plt.axis('equal')
+    plt.axis("equal")
     if save is not None:
-        plt.savefig(save, dpi=180, bbox_inches='tight')
+        plt.savefig(save, dpi=180, bbox_inches="tight")
     plt.show()
     plt.close()
+
 
 # Optionally: Add stub for FFT and wave plotting
 
@@ -317,12 +356,12 @@ def plot_lattice_3d(
     filename_html=None,
     filename_img=None,
     marker_size=3,
-    title='Tetrakis Lattice (3D)',
+    title="Tetrakis Lattice (3D)",
 ):
     """
     Interactive 3D scatter plot of all nodes in a 3D tetrakis lattice.
     Optionally highlights event horizon nodes (in gold) and removed (black hole) nodes (as red or empty).
-    
+
     Parameters:
         G: networkx.Graph
         horizon_nodes: list of nodes to highlight as event horizon (gold)
@@ -345,11 +384,11 @@ def plot_lattice_3d(
         y.append(c + offset)
         z.append(zz)
         if horizon_nodes and node in horizon_nodes:
-            color.append('gold')
-            symbol.append('diamond')
+            color.append("gold")
+            symbol.append("diamond")
         else:
-            color.append('blue')
-            symbol.append('circle')
+            color.append("blue")
+            symbol.append("circle")
     # Plot removed nodes (as hollow circles or red)
     removed_x, removed_y, removed_z = [], [], []
     if removed_nodes:
@@ -363,29 +402,39 @@ def plot_lattice_3d(
     # Build figure
     fig = go.Figure()
     # Plot lattice nodes
-    fig.add_trace(go.Scatter3d(
-        x=x, y=y, z=z,
-        mode='markers',
-        marker=dict(size=marker_size, color=color, symbol=symbol, opacity=0.8),
-        name='Lattice Nodes',
-        text=[str(node) for node in G.nodes]
-    ))
+    fig.add_trace(
+        go.Scatter3d(
+            x=x,
+            y=y,
+            z=z,
+            mode="markers",
+            marker=dict(size=marker_size, color=color, symbol=symbol, opacity=0.8),
+            name="Lattice Nodes",
+            text=[str(node) for node in G.nodes],
+        )
+    )
     # Plot removed nodes (if any)
     if removed_nodes:
-        fig.add_trace(go.Scatter3d(
-            x=removed_x, y=removed_y, z=removed_z,
-            mode='markers',
-            marker=dict(size=marker_size+2, color='red', symbol='x', opacity=0.8, line=dict(width=2)),
-            name='Black Hole (removed)'
-        ))
+        fig.add_trace(
+            go.Scatter3d(
+                x=removed_x,
+                y=removed_y,
+                z=removed_z,
+                mode="markers",
+                marker=dict(
+                    size=marker_size + 2,
+                    color="red",
+                    symbol="x",
+                    opacity=0.8,
+                    line=dict(width=2),
+                ),
+                name="Black Hole (removed)",
+            )
+        )
     fig.update_layout(
         title=title,
-        scene=dict(
-            xaxis_title='Row',
-            yaxis_title='Col',
-            zaxis_title='Layer'
-        ),
-        legend=dict(itemsizing='constant')
+        scene=dict(xaxis_title="Row", yaxis_title="Col", zaxis_title="Layer"),
+        legend=dict(itemsizing="constant"),
     )
     fig.show()
     # Optionally save outputs
@@ -398,6 +447,7 @@ def plot_lattice_3d(
 # ---------------------------------------------------------------------------
 # Generic 3-D scatter for any graph that stores Cartesian positions
 # ---------------------------------------------------------------------------
+
 
 def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
     """
@@ -422,5 +472,7 @@ def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
     ax = fig.add_subplot(111, projection="3d")
     ax.scatter(xs, ys, zs, s=node_size)
     ax.set_title(title)
-    ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
     plt.show()

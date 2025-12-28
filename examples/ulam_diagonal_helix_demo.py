@@ -14,14 +14,14 @@ Run:
 from __future__ import annotations
 
 import math
-import networkx as nx
 
-from tetrakis_sim.prime_helix import add_prime_helix
-from tetrakis_sim.ulam import primes_on_ulam_diagonals
+import networkx as nx
 
 # If your project exposes a 3D plot helper, use it.
 # If this import fails, comment it out and just print node/edge counts.
 from tetrakis_sim.plot import plot_3d_graph
+from tetrakis_sim.prime_helix import add_prime_helix
+from tetrakis_sim.ulam import primes_on_ulam_diagonals
 
 
 def main() -> None:
@@ -60,4 +60,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

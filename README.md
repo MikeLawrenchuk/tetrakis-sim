@@ -1,13 +1,13 @@
 # Tetrakis-Sim: Discrete Geometry & Wave Physics
 
-**Author:** Mike Lawrenchuk  
+**Author:** Mike Lawrenchuk
 **Project:** [tetrakis-sim](https://github.com/MikeLawrenchuk/tetrakis-sim)
 
 ---
 
 ## Overview
 
-*Tetrakis-Sim* is a research-grade Python toolkit for discrete geometry, wave simulation, and spectral analysis on 2D/3D tetrakis-square lattices with advanced 
+*Tetrakis-Sim* is a research-grade Python toolkit for discrete geometry, wave simulation, and spectral analysis on 2D/3D tetrakis-square lattices with advanced
 defects (black holes, wedges, event horizons, naked singularities).
 
 **Features:**
@@ -205,7 +205,7 @@ tetrakis-batch --dim 3 --size 13 --layers 7 \
 
 ## Contributing / Collaboration
 
-Pull requests, issues, and collaborations are welcome.  
+Pull requests, issues, and collaborations are welcome.
 If you are interested in research, teaching, or publishing with this code, please open an issue.
 
 ---
@@ -217,4 +217,3 @@ Distributed under the MIT License; see `LICENSE` for details.
 ---
 
 *For questions, collaboration, or scientific consulting, open an issue or contact the author.*
-

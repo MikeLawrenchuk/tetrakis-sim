@@ -1,8 +1,7 @@
-
 from __future__ import annotations
 
 import warnings
-from typing import Dict, Hashable, Iterable, List, Optional, Tuple
+from collections.abc import Hashable, Iterable
 
 import numpy as np
 
@@ -16,11 +15,11 @@ class SimulationHistory(list):
 
     def __init__(
         self,
-        states: Iterable[Dict[Hashable, float]],
+        states: Iterable[dict[Hashable, float]],
         *,
         dt: float,
         wave_speed: float,
-        metadata: Optional[Dict[str, float | bool]] = None,
+        metadata: dict[str, float | bool] | None = None,
     ) -> None:
         super().__init__(states)
         self.dt = dt
@@ -28,7 +27,7 @@ class SimulationHistory(list):
         self.metadata = metadata or {}
 
 
-def _coerce_initial_kick(nodes: List[Hashable], initial_data: Optional[Dict]) -> Dict:
+def _coerce_initial_kick(nodes: list[Hashable], initial_data: dict | None) -> dict:
     """Ensure the lattice has an initial displacement to propagate."""
 
     u = {n: 0.0 for n in nodes}
@@ -42,7 +41,7 @@ def _coerce_initial_kick(nodes: List[Hashable], initial_data: Optional[Dict]) ->
 def run_wave_sim(
     G,
     steps: int = 100,
-    initial_data: Optional[Dict] = None,
+    initial_data: dict | None = None,
     c: float = 1.0,
     dt: float = 0.2,
     damping: float = 0.0,
@@ -60,7 +59,7 @@ def run_wave_sim(
 
     max_degree = max((G.degree[n] for n in nodes), default=0)
     effective_dt = float(dt)
-    metadata: Dict[str, float | bool] = {
+    metadata: dict[str, float | bool] = {
         "steps": steps,
         "requested_dt": dt,
         "wave_speed": c,
@@ -87,7 +86,7 @@ def run_wave_sim(
     metadata.setdefault("stability_adjusted", False)
     metadata.setdefault("effective_dt", float(effective_dt))
 
-    history: List[Dict[Hashable, float]] = [u.copy()]
+    history: list[dict[Hashable, float]] = [u.copy()]
     coeff = (c * effective_dt) ** 2
     for _ in range(steps):
         unew = {}
@@ -112,27 +111,22 @@ def run_wave_sim(
 
         uprev, u = u, unew
         history.append(u.copy())
-            
-
-
-
-
 
     return SimulationHistory(history, dt=effective_dt, wave_speed=c, metadata=metadata)
 
 
-def apply_defect(G, defect_type: str = "none", **kwargs) -> Tuple:
+def apply_defect(G, defect_type: str = "none", **kwargs) -> tuple:
     """Convenience wrapper around :func:`tetrakis_sim.defects.apply_defect`."""
 
     return _core_apply_defect(G, defect_type=defect_type, return_removed=True, **kwargs)
 
 
 def run_fft(
-    history: Iterable[Dict[Hashable, float]],
-    node: Optional[Hashable] = None,
+    history: Iterable[dict[Hashable, float]],
+    node: Hashable | None = None,
     *,
-    dt: Optional[float] = None,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    dt: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute the FFT for a node across the simulation history."""
 
     history_list = list(history)
