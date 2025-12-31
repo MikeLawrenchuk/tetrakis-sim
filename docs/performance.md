@@ -4,16 +4,30 @@ This note records benchmark commands and measured results for build_sheet and ru
 
 ## Benchmark script
 
-Command:
+The benchmark prints CSV (one row per lattice size):
 
-    python scripts/bench_wave.py | tee bench.csv
+    python scripts/bench_wave.py --help
+
+Canonical usage (write outputs under `benchmarks/`):
+
+    mkdir -p benchmarks
+    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee benchmarks/bench_2d_before.csv
 
 The output is CSV with one row per lattice size.
+
+## Methodology
+
+- Timings use `time.perf_counter()` inside `scripts/bench_wave.py`.
+- For each lattice size: run `repeats=3` and report `sim_s_median` (CSV also includes `sim_s_min` / `sim_s_max`).
+- If `stability_adjusted=1`, the simulator clamped `dt` internally. Compare runs at matched `effective_dt`.
 
 ## Machine
 
 Fill this in when you record results:
 
+- Git commit: bdd46d111546eda03891eb7d3e83e8fa8c42199a
+- numpy: 1.26.4
+- networkx: 3.4.2
 - Model: MacBook Pro (MacBookPro17,1)
 - CPU: Apple M1
 - RAM: 8 GB
@@ -26,11 +40,11 @@ Fill this in when you record results:
 
 2D baseline:
 
-    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee bench_2d_before.csv
+    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee benchmarks/bench_2d_before.csv
 
 3D baseline:
 
-    python scripts/bench_wave.py --dim 3 --layers 5 --sizes 7,11,15 --steps 30 --repeats 3 --dt 0.1 | tee bench_3d_before.csv
+    python scripts/bench_wave.py --dim 3 --layers 5 --sizes 7,11,15 --steps 30 --repeats 3 --dt 0.1 | tee benchmarks/bench_3d_before.csv
 
 Notes:
 - If stability_adjusted=1, dt was clamped internally. For fair comparisons, use the same effective_dt.
