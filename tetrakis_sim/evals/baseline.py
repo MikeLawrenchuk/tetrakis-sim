@@ -70,6 +70,17 @@ def run_nearest_centroid_baseline(
     Xte = X[test_idx]
     yte = [y[i] for i in test_idx]
 
+    # Standardize using training statistics (z-score)
+    mu = Xtr.mean(axis=0)
+    sd = Xtr.std(axis=0)
+    sd[sd == 0.0] = 1.0
+
+    Xtr = (Xtr - mu) / sd
+    Xte = (Xte - mu) / sd
+
+    Xtr = np.nan_to_num(Xtr, nan=0.0, posinf=0.0, neginf=0.0)
+    Xte = np.nan_to_num(Xte, nan=0.0, posinf=0.0, neginf=0.0)
+
     labels = sorted(set(ytr))
     centroids: dict[str, np.ndarray] = {}
     for lab in labels:
@@ -77,6 +88,7 @@ def run_nearest_centroid_baseline(
         centroids[lab] = Xtr[mask].mean(axis=0) if mask.any() else Xtr.mean(axis=0)
 
     correct = 0
+    preds: list[str] = []
     for i in range(len(Xte)):
         x = Xte[i]
         best_lab = None
@@ -86,14 +98,29 @@ def run_nearest_centroid_baseline(
             if best_d is None or d < best_d:
                 best_d = d
                 best_lab = lab
-        if best_lab == yte[i]:
+        pred = str(best_lab)
+        preds.append(pred)
+        if pred == yte[i]:
             correct += 1
 
     acc = float(correct / max(1, len(Xte)))
+
+    # Macro-F1
+    f1s: list[float] = []
+    for lab in sorted(set(yte) | set(preds)):
+        tp = sum(1 for p, t in zip(preds, yte) if p == lab and t == lab)
+        fp = sum(1 for p, t in zip(preds, yte) if p == lab and t != lab)
+        fn = sum(1 for p, t in zip(preds, yte) if p != lab and t == lab)
+        prec = tp / (tp + fp) if (tp + fp) else 0.0
+        rec = tp / (tp + fn) if (tp + fn) else 0.0
+        f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) else 0.0
+        f1s.append(float(f1))
+    macro_f1 = float(sum(f1s) / len(f1s)) if f1s else 0.0
 
     return {
         "n": float(len(rows)),
         "n_train": float(len(train_idx)),
         "n_test": float(len(test_idx)),
         "accuracy": acc,
+        "macro_f1": macro_f1,
     }

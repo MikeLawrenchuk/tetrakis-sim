@@ -11,6 +11,8 @@ from tetrakis_sim.physics import run_fft, run_wave_sim
 
 from .features import spectral_features, timeseries_features
 
+SCHEMA_VERSION = 1
+
 
 def _center_for(size: int, dim: int, layers: int) -> tuple[int, ...]:
     if dim == 2:
@@ -74,25 +76,26 @@ def generate_defect_classification_jsonl(
     rng = random.Random(seed)
     defect_types = ["none", "wedge", "blackhole", "singularity"]
 
-    records: list[dict[str, Any]] = []
     idx = 0
 
-    for defect_type in defect_types:
-        for _ in range(int(n_per_class)):
-            idx += 1
+    with out_path.open("w", encoding="utf-8") as f:
 
-            G = build_sheet(size=size, dim=dim, layers=layers)
-            center = _center_for(size=size, dim=dim, layers=layers)
+        for defect_type in defect_types:
+            for _ in range(int(n_per_class)):
+                idx += 1
 
-            params: dict[str, Any] = {
-                "size": size,
-                "dim": dim,
-                "layers": layers,
-                "steps": steps,
-                "c": c,
-                "dt": dt,
-                "damping": damping,
-            }
+                G = build_sheet(size=size, dim=dim, layers=layers)
+                center = _center_for(size=size, dim=dim, layers=layers)
+
+                params: dict[str, Any] = {
+                    "size": size,
+                    "dim": dim,
+                    "layers": layers,
+                    "steps": steps,
+                    "c": c,
+                    "dt_requested": dt,
+                    "damping": damping,
+                }
 
             defect_kwargs: dict[str, Any] = {}
             if defect_type == "blackhole":
@@ -135,6 +138,8 @@ def generate_defect_classification_jsonl(
                 dt=dt,
                 damping=damping,
             )
+            dt_used = float(getattr(history, "dt", dt))
+            params["dt_used"] = dt_used
 
             freq, amp, values = run_fft(history, node=kick)
 
@@ -148,16 +153,13 @@ def generate_defect_classification_jsonl(
             )
 
             rec = {
+                "schema_version": SCHEMA_VERSION,
                 "id": f"dc_{idx:05d}",
                 "task": "defect_classification",
                 "label": defect_type,
                 "params": params,
                 "features": feats,
             }
-            records.append(rec)
-
-    with out_path.open("w", encoding="utf-8") as f:
-        for rec in records:
             f.write(json.dumps(rec, sort_keys=True) + "\n")
 
     return out_path
