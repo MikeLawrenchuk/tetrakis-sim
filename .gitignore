@@ -86,3 +86,6 @@ out_sing/
 # Benchmark outputs
 /bench_*.csv
 docs/performance.md.bak
+
+# Generated outputs
+data/

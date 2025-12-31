@@ -77,9 +77,7 @@ def generate_defect_classification_jsonl(
     defect_types = ["none", "wedge", "blackhole", "singularity"]
 
     idx = 0
-
     with out_path.open("w", encoding="utf-8") as f:
-
         for defect_type in defect_types:
             for _ in range(int(n_per_class)):
                 idx += 1
@@ -97,69 +95,71 @@ def generate_defect_classification_jsonl(
                     "damping": damping,
                 }
 
-            defect_kwargs: dict[str, Any] = {}
-            if defect_type == "blackhole":
-                r = float(rng.choice([1.5, 2.0, 2.5]))
-                defect_kwargs = {"center": center, "radius": r}
-                params.update({"radius": r})
-            elif defect_type == "wedge":
-                if dim == 2:
-                    defect_kwargs = {"center": center}
-                else:
-                    defect_kwargs = {"center": center[:2], "layer": center[2]}
-                    params.update({"layer": int(center[2])})
-            elif defect_type == "singularity":
-                sr = float(rng.choice([0.0, 0.5, 1.0]))
-                mass = float(rng.choice([50.0, 200.0, 1000.0]))
-                pot = float(rng.choice([0.0, 25.0]))
-                prune = bool(rng.choice([False, True]))
-                defect_kwargs = {
-                    "center": center,
-                    "radius": sr,
-                    "mass": mass,
-                    "potential": pot,
-                    "prune_edges": prune,
-                }
-                params.update({"radius": sr, "mass": mass, "potential": pot, "prune_edges": prune})
+                defect_kwargs: dict[str, Any] = {}
+                if defect_type == "blackhole":
+                    r = float(rng.choice([1.5, 2.0, 2.5]))
+                    defect_kwargs = {"center": center, "radius": r}
+                    params.update({"radius": r})
+                elif defect_type == "wedge":
+                    if dim == 2:
+                        defect_kwargs = {"center": center}
+                    else:
+                        defect_kwargs = {"center": center[:2], "layer": center[2]}
+                        params.update({"layer": int(center[2])})
+                elif defect_type == "singularity":
+                    sr = float(rng.choice([0.0, 0.5, 1.0]))
+                    mass = float(rng.choice([50.0, 200.0, 1000.0]))
+                    pot = float(rng.choice([0.0, 25.0]))
+                    prune = bool(rng.choice([False, True]))
+                    defect_kwargs = {
+                        "center": center,
+                        "radius": sr,
+                        "mass": mass,
+                        "potential": pot,
+                        "prune_edges": prune,
+                    }
+                    params.update(
+                        {"radius": sr, "mass": mass, "potential": pot, "prune_edges": prune}
+                    )
 
-            removed_nodes: list[Any] = []
-            if defect_type != "none":
-                G, removed_nodes = apply_defect(
-                    G, defect_type=defect_type, return_removed=True, **defect_kwargs
+                removed_nodes: list[Any] = []
+                if defect_type != "none":
+                    G, removed_nodes = apply_defect(
+                        G, defect_type=defect_type, return_removed=True, **defect_kwargs
+                    )
+
+                kick = _pick_kick_node(G, center=center, dim=dim)
+
+                history = run_wave_sim(
+                    G,
+                    steps=steps,
+                    initial_data={kick: 1.0},
+                    c=c,
+                    dt=dt,
+                    damping=damping,
                 )
 
-            kick = _pick_kick_node(G, center=center, dim=dim)
+                params["dt_used"] = float(getattr(history, "dt", dt))
 
-            history = run_wave_sim(
-                G,
-                steps=steps,
-                initial_data={kick: 1.0},
-                c=c,
-                dt=dt,
-                damping=damping,
-            )
-            dt_used = float(getattr(history, "dt", dt))
-            params["dt_used"] = dt_used
+                freq, amp, values = run_fft(history, node=kick)
 
-            freq, amp, values = run_fft(history, node=kick)
+                feats: dict[str, float] = {}
+                feats.update(_graph_features(G, removed_nodes))
+                feats.update(spectral_features(freq, amp))
+                feats.update(timeseries_features(values))
+                feats["kick_degree"] = float(G.degree[kick])
+                feats["kick_dist2_center"] = float(
+                    (kick[0] - center[0]) ** 2 + (kick[1] - center[1]) ** 2
+                )
 
-            feats: dict[str, float] = {}
-            feats.update(_graph_features(G, removed_nodes))
-            feats.update(spectral_features(freq, amp))
-            feats.update(timeseries_features(values))
-            feats["kick_degree"] = float(G.degree[kick])
-            feats["kick_dist2_center"] = float(
-                (kick[0] - center[0]) ** 2 + (kick[1] - center[1]) ** 2
-            )
-
-            rec = {
-                "schema_version": SCHEMA_VERSION,
-                "id": f"dc_{idx:05d}",
-                "task": "defect_classification",
-                "label": defect_type,
-                "params": params,
-                "features": feats,
-            }
-            f.write(json.dumps(rec, sort_keys=True) + "\n")
+                rec = {
+                    "schema_version": SCHEMA_VERSION,
+                    "id": f"dc_{idx:05d}",
+                    "task": "defect_classification",
+                    "label": defect_type,
+                    "params": params,
+                    "features": feats,
+                }
+                f.write(json.dumps(rec, sort_keys=True) + "\n")
 
     return out_path
