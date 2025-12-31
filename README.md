@@ -53,6 +53,14 @@ python -m pip install -e ".[dev,plot]"
 ```
 ---
 
+### Build the package (sanity check)
+
+```bash
+python -m pip install -U build
+python -m build
+```
+
+
 ## Evals (dataset generation + baseline)
 
 Generate a labeled JSONL dataset and score it with a simple baseline:
