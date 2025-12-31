@@ -4,16 +4,41 @@ This note records benchmark commands and measured results for build_sheet and ru
 
 ## Benchmark script
 
-Command:
+The benchmark prints CSV (one row per lattice size):
 
-    python scripts/bench_wave.py | tee bench.csv
+    python scripts/bench_wave.py --help
+
+Canonical usage (write outputs under `benchmarks/`):
+
+    mkdir -p benchmarks
+    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee benchmarks/bench_2d_before.csv
 
 The output is CSV with one row per lattice size.
+
+## Methodology
+
+- Timings use `time.perf_counter()` inside `scripts/bench_wave.py`.
+- For each lattice size: run `repeats=3` and report `sim_s_median` (CSV also includes `sim_s_min` / `sim_s_max`).
+- If `stability_adjusted=1`, the simulator clamped `dt` internally. Compare runs at matched `effective_dt`.
+
+
+## Benchmark artifacts
+
+These CSVs are committed for reproducibility:
+
+- `benchmarks/bench_2d_before.csv`
+- `benchmarks/bench_2d_after.csv`
+- `benchmarks/bench_3d_before.csv`
+- `benchmarks/bench_3d_after.csv`
+
 
 ## Machine
 
 Fill this in when you record results:
 
+- Git commit: bdd46d111546eda03891eb7d3e83e8fa8c42199a
+- numpy: 1.26.4
+- networkx: 3.4.2
 - Model: MacBook Pro (MacBookPro17,1)
 - CPU: Apple M1
 - RAM: 8 GB
@@ -26,11 +51,11 @@ Fill this in when you record results:
 
 2D baseline:
 
-    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee bench_2d_before.csv
+    python scripts/bench_wave.py --dim 2 --sizes 11,21,31,41 --steps 50 --repeats 3 --dt 0.1 | tee benchmarks/bench_2d_before.csv
 
 3D baseline:
 
-    python scripts/bench_wave.py --dim 3 --layers 5 --sizes 7,11,15 --steps 30 --repeats 3 --dt 0.1 | tee bench_3d_before.csv
+    python scripts/bench_wave.py --dim 3 --layers 5 --sizes 7,11,15 --steps 30 --repeats 3 --dt 0.1 | tee benchmarks/bench_3d_before.csv
 
 Notes:
 - If stability_adjusted=1, dt was clamped internally. For fair comparisons, use the same effective_dt.
@@ -80,3 +105,10 @@ run_wave_sim iterates over nodes and sums neighbor values each step, so runtime 
 | 7 | 5 | 980 | 8,134 | 30 | 3 | 0.032374 | 1.77x | 0.100000 | 0 |
 | 11 | 5 | 2,420 | 29,766 | 30 | 3 | 0.113395 | 1.61x | 0.100000 | 0 |
 | 15 | 5 | 4,500 | 73,350 | 30 | 3 | 0.268107 | 1.50x | 0.100000 | 0 |
+
+## Normalized cost (sanity check)
+
+Seconds per edge-step (computed from the committed CSVs):
+
+- 2D max size=41, steps=50: before 1.311e-07, after 9.654e-08 sec/(edge·step) (speedup 1.36×)
+- 3D max size=15, steps=30: before 1.829e-07, after 1.218e-07 sec/(edge·step) (speedup 1.50×)
