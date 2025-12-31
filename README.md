@@ -51,6 +51,18 @@ From the repo root:
 # Recommended: dev tooling + plotting backends
 python -m pip install -e ".[dev,plot]"
 ```
+---
+
+## Evals (dataset generation + baseline)
+
+Generate a labeled JSONL dataset and score it with a simple baseline:
+
+```bash
+mkdir -p data/evals
+tetrakis-eval generate --out data/evals/dc.jsonl --n-per-class 10 --seed 1 --size 11 --steps 40 --dt 0.1
+tetrakis-eval baseline --data data/evals/dc.jsonl --seed 1 --test-frac 0.3
+```
+
 
 ### 2. Run a Simulation with the Batch CLI
 
@@ -65,6 +77,8 @@ Backward-compatible (still works when running from a clone):
 ```bash
 python scripts/run_batch.py --dim 3 --size 11 --layers 7 --radius 2.5 --steps 50
 ```
+
+
 
 **CLI arguments (common):**
 
@@ -198,9 +212,12 @@ tetrakis-batch --dim 3 --size 13 --layers 7 \
 ## Documentation
 
 * **Model & validation:** `docs/model_and_validation.md`
+* **Performance & benchmarks:** `docs/performance.md`
+* **Evals harness:** `tetrakis-eval --help` (dataset generation + baseline scoring)
 * **Source code:** See `tetrakis_sim/`
 * **Notebooks:** See `notebooks/analyze_batch_outputs.ipynb` for batch data analysis.
 * **Batch runner:** `tetrakis-batch --help` (or `python scripts/run_batch.py --help` when running from a clone)
+
 
 ---
 
