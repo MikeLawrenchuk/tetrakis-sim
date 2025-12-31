@@ -14,12 +14,13 @@ The output is CSV with one row per lattice size.
 
 Fill this in when you record results:
 
-- Model:
-- CPU:
-- RAM:
-- OS:
-- Python:
-- Install method: (e.g., pip install -e ".[dev]")
+- Model: MacBook Pro (MacBookPro17,1)
+- CPU: Apple M1
+- RAM: 8 GB
+- OS: macOS 13.5 (22G74)
+- Python: 3.11.9
+- Install method: venv (.venv), pip install -e ".[dev]"
+
 
 ## Baseline runs (before optimization)
 
@@ -57,9 +58,25 @@ Notes:
 
 run_wave_sim iterates over nodes and sums neighbor values each step, so runtime is expected to be dominated by Python-level loops for larger graphs.
 
-## Optimization plan (next)
+## Optimization implemented
 
-- Change:
-- Before/after command:
-- Before/after tables:
-- Correctness checks run (pytest / invariants):
+**Change:** precompute neighbor lists, degrees, and per-node mass/potential once per run; reduce repeated NetworkX lookups in the inner loop.
+
+**Observed speedup (median sim time):** 2D 1.36x–1.51x; 3D 1.50x–1.77x.
+
+### After optimization (2D; steps=50, repeats=3, dt=0.1)
+
+| size | nodes | edges | steps | repeats | sim_s_median | speedup_vs_baseline | effective_dt | stability_adjusted |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 11 | 484 | 5,566 | 50 | 3 | 0.033724 | 1.51x | 0.100000 | 0 |
+| 21 | 1,764 | 37,926 | 50 | 3 | 0.191302 | 1.45x | 0.100000 | 0 |
+| 31 | 3,844 | 121,086 | 50 | 3 | 0.583171 | 1.41x | 0.100000 | 0 |
+| 41 | 6,724 | 279,046 | 50 | 3 | 1.346898 | 1.36x | 0.100000 | 0 |
+
+### After optimization (3D; layers=5, steps=30, repeats=3, dt=0.1)
+
+| size | layers | nodes | edges | steps | repeats | sim_s_median | speedup_vs_baseline | effective_dt | stability_adjusted |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 7 | 5 | 980 | 8,134 | 30 | 3 | 0.032374 | 1.77x | 0.100000 | 0 |
+| 11 | 5 | 2,420 | 29,766 | 30 | 3 | 0.113395 | 1.61x | 0.100000 | 0 |
+| 15 | 5 | 4,500 | 73,350 | 30 | 3 | 0.268107 | 1.50x | 0.100000 | 0 |

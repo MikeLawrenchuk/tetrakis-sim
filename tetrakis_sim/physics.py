@@ -86,27 +86,40 @@ def run_wave_sim(
     metadata.setdefault("stability_adjusted", False)
     metadata.setdefault("effective_dt", float(effective_dt))
 
+    # Precompute per-node neighbor lists and static node attributes for speed.
+    neighbor_lists = [list(G.neighbors(n)) for n in nodes]
+    degrees = [G.degree[n] for n in nodes]
+    inv_masses: list[float] = []
+    potentials: list[float] = []
+    for n in nodes:
+        mass = float(G.nodes[n].get("mass", 1.0))
+        if mass <= 0.0:
+            mass = 1.0
+        inv_masses.append(1.0 / mass)
+        potentials.append(float(G.nodes[n].get("potential", 0.0)))
+
     history: list[dict[Hashable, float]] = [u.copy()]
     coeff = (c * effective_dt) ** 2
     for _ in range(steps):
-        unew = {}
-        for n in nodes:
-            neighbor_sum = sum(u[nb] for nb in G.neighbors(n))
-            deg = G.degree[n]
-            lap = neighbor_sum - deg * u[n]
+        u_local = u
+        uprev_local = uprev
+        unew: dict[Hashable, float] = {}
 
-            mass = float(G.nodes[n].get("mass", 1.0))
-            potential = float(G.nodes[n].get("potential", 0.0))
+        for idx, n in enumerate(nodes):
+            u_n = u_local[n]
+            up_n = uprev_local[n]
 
-            if mass <= 0.0:
-                mass = 1.0
+            neighbor_sum = 0.0
+            for nb in neighbor_lists[idx]:
+                neighbor_sum += u_local[nb]
 
+            lap = neighbor_sum - degrees[idx] * u_n
             unew[n] = (
-                2 * u[n]
-                - uprev[n]
-                + (coeff / mass) * lap
-                - coeff * potential * u[n]
-                - damping * (u[n] - uprev[n])
+                2 * u_n
+                - up_n
+                + (coeff * inv_masses[idx]) * lap
+                - (coeff * potentials[idx]) * u_n
+                - damping * (u_n - up_n)
             )
 
         uprev, u = u, unew
