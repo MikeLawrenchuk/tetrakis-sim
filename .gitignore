@@ -84,5 +84,5 @@ out_sing/
 .pre-commit-config.yaml.bad.*
 
 # Benchmark outputs
-bench_*.csv
+/bench_*.csv
 docs/performance.md.bak
