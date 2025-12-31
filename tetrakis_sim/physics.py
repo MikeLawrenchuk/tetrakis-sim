@@ -155,7 +155,7 @@ def run_fft(
 
     inferred_dt = dt
     if inferred_dt is None and hasattr(history, "dt"):
-        inferred_dt = getattr(history, "dt")
+        inferred_dt = history.dt
     if inferred_dt is None:
         inferred_dt = 1.0
 

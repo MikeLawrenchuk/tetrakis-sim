@@ -110,7 +110,7 @@ def main() -> None:
             continue
 
         positions = [G.nodes[n]["pos"] for n in nodes_d]
-        xs, ys, zs = zip(*positions)
+        xs, ys, zs = zip(*positions, strict=False)
 
         # Apply plot-only scaling to x/y
         xs = [float(x) * scale for x in xs]
