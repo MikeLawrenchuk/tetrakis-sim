@@ -82,3 +82,6 @@ out_sing/
 *.bak.*
 
 .pre-commit-config.yaml.bad.*
+
+# Benchmark outputs
+bench_*.csv
