@@ -57,7 +57,11 @@ def run_wave_sim(
     u = _coerce_initial_kick(nodes, initial_data)
     uprev = {n: 0.0 for n in nodes}
 
-    max_degree = max((G.degree[n] for n in nodes), default=0)
+    deg_map = dict(G.degree(nodes))
+
+    degrees = [deg_map[n] for n in nodes]
+
+    max_degree = max(degrees, default=0)
     effective_dt = float(dt)
     metadata: dict[str, float | bool] = {
         "steps": steps,
@@ -87,8 +91,7 @@ def run_wave_sim(
     metadata.setdefault("effective_dt", float(effective_dt))
 
     # Precompute per-node neighbor lists and static node attributes for speed.
-    neighbor_lists = [list(G.neighbors(n)) for n in nodes]
-    degrees = [G.degree[n] for n in nodes]
+    neighbor_lists = [list(G[n]) for n in nodes]
     inv_masses: list[float] = []
     potentials: list[float] = []
     for n in nodes:

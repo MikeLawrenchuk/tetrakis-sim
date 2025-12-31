@@ -17,6 +17,8 @@ class BenchRow:
     dim: int
     layers: int
     size: int
+    steps: int
+    repeats: int
     nodes: int
     edges: int
     max_degree: int
@@ -63,8 +65,8 @@ def bench_one(
     initial_data = {kick: 1.0}
 
     sim_times: list[float] = []
-    effective_dt = float(dt)
-    stability_adjusted = False
+    effective_dts: list[float] = []
+    stability_adjusted_any = False
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
@@ -79,9 +81,12 @@ def bench_one(
                 damping=float(damping),
             )
             sim_times.append(time.perf_counter() - t1)
+            effective_dts.append(float(hist.dt))
+            stability_adjusted_any = stability_adjusted_any or bool(
+                hist.metadata.get("stability_adjusted", False)
+            )
 
-            effective_dt = float(hist.dt)
-            stability_adjusted = bool(hist.metadata.get("stability_adjusted", False))
+    effective_dt = float(statistics.median(effective_dts)) if effective_dts else float(dt)
 
     nodes = list(G.nodes)
     max_degree = max((G.degree[n] for n in nodes), default=0)
@@ -90,6 +95,8 @@ def bench_one(
         dim=int(dim),
         layers=int(layers if dim == 3 else 1),
         size=int(size),
+        steps=int(steps),
+        repeats=int(repeats),
         nodes=int(G.number_of_nodes()),
         edges=int(G.number_of_edges()),
         max_degree=int(max_degree),
@@ -98,7 +105,7 @@ def bench_one(
         sim_s_min=float(min(sim_times)),
         sim_s_max=float(max(sim_times)),
         effective_dt=float(effective_dt),
-        stability_adjusted=bool(stability_adjusted),
+        stability_adjusted=bool(stability_adjusted_any),
     )
 
 
@@ -119,7 +126,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("No sizes provided.")
 
     print(
-        "dim,layers,size,nodes,edges,max_degree,build_s,sim_s_median,sim_s_min,sim_s_max,effective_dt,stability_adjusted"
+        "dim,layers,size,steps,repeats,nodes,edges,max_degree,build_s,sim_s_median,sim_s_min,sim_s_max,effective_dt,stability_adjusted"
     )
     for s in sizes:
         row = bench_one(
@@ -133,7 +140,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             repeats=args.repeats,
         )
         print(
-            f"{row.dim},{row.layers},{row.size},{row.nodes},{row.edges},{row.max_degree},"
+            f"{row.dim},{row.layers},{row.size},{row.steps},{row.repeats},{row.nodes},{row.edges},{row.max_degree},"
             f"{row.build_s:.6f},{row.sim_s_median:.6f},{row.sim_s_min:.6f},{row.sim_s_max:.6f},"
             f"{row.effective_dt:.6f},{int(row.stability_adjusted)}"
         )
