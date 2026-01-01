@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .baseline import run_nearest_centroid_baseline
 from .dataset import generate_defect_classification_jsonl
+from .llm_export import export_llm_eval_jsonl
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,6 +34,24 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--test-frac", type=float, default=0.3)
     b.add_argument("--split", choices=["random", "stratified"], default="stratified")
     b.add_argument("--out-metrics", default=None, help="Optional path to write metrics as JSON")
+
+    x = sub.add_parser(
+        "llm-export", help="Export dataset JSONL to prompt/expected JSONL for LLM evals"
+    )
+    x.add_argument("--data", required=True, help="Input JSONL path")
+    x.add_argument("--out", required=True, help="Output JSONL path")
+    x.add_argument("--format", choices=["kv", "json"], default="kv")
+    x.add_argument(
+        "--max-features",
+        type=int,
+        default=0,
+        help="Limit number of features included in prompt (0 = all).",
+    )
+    x.add_argument(
+        "--include-params",
+        action="store_true",
+        help="Include the record params JSON in the prompt.",
+    )
 
     return parser
 
@@ -77,6 +96,18 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"wrote_metrics_json: {out}")
 
+        return 0
+
+    if args.cmd == "llm-export":
+        max_features = None if int(args.max_features) <= 0 else int(args.max_features)
+        out_path = export_llm_eval_jsonl(
+            args.data,
+            args.out,
+            prompt_format=args.format,
+            max_features=max_features,
+            include_params=bool(args.include_params),
+        )
+        print(f"wrote: {out_path}")
         return 0
 
     return 2
