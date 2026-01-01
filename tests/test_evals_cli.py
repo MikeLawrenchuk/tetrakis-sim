@@ -6,7 +6,7 @@ from pathlib import Path
 from tetrakis_sim.evals.cli import main as eval_main
 
 
-def test_evals_cli_smoke(tmp_path: Path) -> None:
+def test_evals_cli_smoke(tmp_path: Path, capsys) -> None:
     out = tmp_path / "dc.jsonl"
 
     rc = eval_main(
@@ -41,5 +41,23 @@ def test_evals_cli_smoke(tmp_path: Path) -> None:
     assert "dt_requested" in rec0["params"]
     assert "dt_used" in rec0["params"]
 
-    rc2 = eval_main(["baseline", "--data", str(out), "--seed", "1", "--test-frac", "0.5"])
+    _ = capsys.readouterr()  # clear generate output
+
+    rc2 = eval_main(
+        [
+            "baseline",
+            "--data",
+            str(out),
+            "--seed",
+            "1",
+            "--test-frac",
+            "0.5",
+            "--split",
+            "stratified",
+        ]
+    )
     assert rc2 == 0
+
+    captured = capsys.readouterr().out
+    assert "accuracy" in captured
+    assert "macro_f1" in captured

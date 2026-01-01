@@ -4,9 +4,11 @@ import json
 import math
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
+
+SplitMode = Literal["random", "stratified"]
 
 
 def _load_jsonl(path: str | Path) -> list[dict[str, Any]]:
@@ -39,7 +41,7 @@ def _vectorize(rows: list[dict[str, Any]], keys: list[str]) -> tuple[np.ndarray,
     return X, y
 
 
-def _split(n: int, *, seed: int, test_frac: float) -> tuple[list[int], list[int]]:
+def _split_random(n: int, *, seed: int, test_frac: float) -> tuple[list[int], list[int]]:
     idx = list(range(n))
     rng = random.Random(seed)
     rng.shuffle(idx)
@@ -51,11 +53,76 @@ def _split(n: int, *, seed: int, test_frac: float) -> tuple[list[int], list[int]
     return train_idx, test_idx
 
 
+def _split_stratified(
+    y: list[str],
+    *,
+    seed: int,
+    test_frac: float,
+) -> tuple[list[int], list[int]]:
+    """Stratified split by label.
+
+    When a label has >=2 examples, attempts to put at least one example in both
+    train and test for that label. Singletons are used to meet the desired test size.
+    """
+    n = len(y)
+    if n <= 1:
+        return [0], [0]
+
+    rng = random.Random(seed)
+
+    by_label: dict[str, list[int]] = {}
+    for i, lab in enumerate(y):
+        by_label.setdefault(lab, []).append(i)
+
+    for idxs in by_label.values():
+        rng.shuffle(idxs)
+
+    desired_test = max(1, int(math.floor(test_frac * n)))
+
+    train_idx: list[int] = []
+    test_idx: list[int] = []
+    singles: list[int] = []
+
+    # Allocate multi-example labels first
+    for idxs in by_label.values():
+        if len(idxs) == 1:
+            singles.append(idxs[0])
+            continue
+
+        n_lab = len(idxs)
+        n_test_lab = int(math.floor(test_frac * n_lab))
+        n_test_lab = max(1, n_test_lab)  # ensure test has something
+        n_test_lab = min(n_test_lab, n_lab - 1)  # ensure train has something
+
+        test_idx.extend(idxs[:n_test_lab])
+        train_idx.extend(idxs[n_test_lab:])
+
+    # Allocate singletons to meet desired test size
+    rng.shuffle(singles)
+    remaining = desired_test - len(test_idx)
+    if remaining > 0:
+        test_idx.extend(singles[:remaining])
+        train_idx.extend(singles[remaining:])
+    else:
+        train_idx.extend(singles)
+
+    # Guardrails
+    if not test_idx and train_idx:
+        test_idx = [train_idx.pop(0)]
+    if not train_idx:
+        train_idx = test_idx[:]  # degenerate fallback
+
+    rng.shuffle(train_idx)
+    rng.shuffle(test_idx)
+    return train_idx, test_idx
+
+
 def run_nearest_centroid_baseline(
     data_path: str | Path,
     *,
     seed: int = 0,
     test_frac: float = 0.3,
+    split: SplitMode = "stratified",
 ) -> dict[str, float]:
     rows = _load_jsonl(data_path)
     if not rows:
@@ -64,7 +131,13 @@ def run_nearest_centroid_baseline(
     keys = _feature_keys(rows)
     X, y = _vectorize(rows, keys)
 
-    train_idx, test_idx = _split(len(rows), seed=seed, test_frac=test_frac)
+    if split == "random":
+        train_idx, test_idx = _split_random(len(rows), seed=seed, test_frac=test_frac)
+    elif split == "stratified":
+        train_idx, test_idx = _split_stratified(y, seed=seed, test_frac=test_frac)
+    else:
+        raise ValueError(f"Unknown split mode: {split}")
+
     Xtr = X[train_idx]
     ytr = [y[i] for i in train_idx]
     Xte = X[test_idx]

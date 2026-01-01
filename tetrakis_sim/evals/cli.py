@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from .baseline import run_nearest_centroid_baseline
@@ -30,6 +31,8 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--data", required=True, help="Input JSONL path")
     b.add_argument("--seed", type=int, default=0)
     b.add_argument("--test-frac", type=float, default=0.3)
+    b.add_argument("--split", choices=["random", "stratified"], default="stratified")
+    b.add_argument("--out-metrics", default=None, help="Optional path to write metrics as JSON")
 
     return parser
 
@@ -60,9 +63,20 @@ def main(argv: list[str] | None = None) -> int:
             args.data,
             seed=args.seed,
             test_frac=args.test_frac,
+            split=args.split,
         )
         for k in sorted(metrics):
             print(f"{k}: {metrics[k]}")
+
+        if args.out_metrics:
+            out = Path(args.out_metrics)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(
+                json.dumps(metrics, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            print(f"wrote_metrics_json: {out}")
+
         return 0
 
     return 2
