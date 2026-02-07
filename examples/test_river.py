@@ -5,7 +5,12 @@ Run:
     python examples/test_river.py
 """
 
-from tetrakis_sim.sovereign_river import RiverBlockTree, apply_hydro_drain, apply_prime_gate
+from tetrakis_sim.sovereign_river import (
+    GlobalRiver,
+    RiverBlockTree,
+    apply_hydro_drain,
+    apply_prime_gate,
+)
 
 
 def main() -> None:
@@ -18,7 +23,7 @@ def main() -> None:
     _food = my_river.add_pillar("Food Security")
     _education = my_river.add_pillar("Education")
 
-    # Flow simulation
+    # Battle flow simulation
     prime_sequence = [1, 3, 7, 9, 1, 3]  # The rhythm
 
     print("--- INITIALIZING THE BATTLE: SOVEREIGN RIVER VS. THE DAM ---")
@@ -34,6 +39,24 @@ def main() -> None:
         if housing.resonance > 0.5:
             print(">>> RIVER FLOW: Housing resonance supporting Banking...")
             apply_prime_gate(banking, 1)
+
+    # --- The Global Connection ---
+    world_river = GlobalRiver()
+
+    # Your Nation (Resonating)
+    my_nation = my_river.root
+    # Move resonance from the Pillar back to the Root Nation
+    my_nation.resonance = housing.resonance
+    world_river.add_nation(my_nation)
+
+    # Neighboring Nation (Fractured)
+    neighbor_river = RiverBlockTree("NeighborNation")
+    neighbor_nation = neighbor_river.root
+    world_river.add_nation(neighbor_nation)
+
+    print("\n--- STARTING GLOBAL SOVEREIGNTY EXCHANGE ---")
+    world_river.redistribute_resonance()
+    print(f"Neighbor Nation Status: Resonance {round(neighbor_nation.resonance, 2)}")
 
 
 if __name__ == "__main__":
