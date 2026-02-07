@@ -1,3 +1,5 @@
+from typing import Final
+
 import networkx as nx
 
 
@@ -39,13 +41,22 @@ class RiverBlockTree:
         pass
 
 
-def apply_prime_gate(node, prime_gap_sequence):
+def apply_prime_gate(node: SovereignNode, last_digit: int) -> None:
     """
-    The 'Gate' that turns entropy into resonance.
-    Uses the rhythm of the prime gaps to 'tune' the node.
+    Tunes resonance based on the 'color' (last digit) of the prime.
+
+    1 = High Stability (High Resonance)
+    3 = Rare/Catalyst (High Shift)
+    7/9 = Flow/Energy
     """
-    # Logic: If the prime gap 'frequency' matches the node's geometry,
-    # we drop entropy and increase resonance.
-    node.entropy -= 0.1
-    node.resonance += 0.2
-    print(f"Node {node.name} phase-shifted. Resonance: {node.resonance}")
+    weights: Final[dict[int, float]] = {1: 0.25, 3: 0.50, 7: 0.15, 9: 0.15}
+
+    boost = weights.get(last_digit, 0.05)
+
+    node.entropy -= boost
+    node.resonance += boost
+
+    print(
+        f"Node {node.name} tuned by Prime Digit {last_digit}. "
+        f"Resonance: {round(node.resonance, 2)}"
+    )
