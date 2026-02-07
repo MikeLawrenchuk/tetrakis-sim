@@ -60,3 +60,19 @@ def apply_prime_gate(node: SovereignNode, last_digit: int) -> None:
         f"Node {node.name} tuned by Prime Digit {last_digit}. "
         f"Resonance: {round(node.resonance, 2)}"
     )
+
+
+def apply_hydro_drain(node: SovereignNode, intensity: float = 0.4) -> None:
+    """
+    Simulates the Hydro Dam/Extractive Policy.
+
+    Actively increases entropy and siphons away resonance.
+    """
+    node.entropy += intensity
+    node.resonance -= intensity
+    if node.resonance < 0:
+        node.resonance = 0.0
+    print(
+        f"!!! EXTERNAL DRAIN: Hydro Dam siphoning {node.name}. "
+        f"Resonance dropped to {round(node.resonance, 2)}"
+    )
