@@ -60,3 +60,50 @@ def apply_prime_gate(node: SovereignNode, last_digit: int) -> None:
         f"Node {node.name} tuned by Prime Digit {last_digit}. "
         f"Resonance: {round(node.resonance, 2)}"
     )
+
+
+def apply_hydro_drain(node: SovereignNode, intensity: float = 0.4) -> None:
+    """
+    Simulates the Hydro Dam/Extractive Policy.
+
+    Actively increases entropy and siphons away resonance.
+    """
+    node.entropy += intensity
+    node.resonance -= intensity
+    if node.resonance < 0:
+        node.resonance = 0.0
+    print(
+        f"!!! EXTERNAL DRAIN: Hydro Dam siphoning {node.name}. "
+        f"Resonance dropped to {round(node.resonance, 2)}"
+    )
+
+
+class GlobalRiver:
+    """
+    Connects multiple Nations worldwide.
+    Excess resonance from one 'Sovereign Node' flows to 'Fractured' nodes.
+    """
+
+    def __init__(self):
+        self.nations = {}
+
+    def add_nation(self, nation_node):
+        self.nations[nation_node.name] = nation_node
+
+    def redistribute_resonance(self):
+        """
+        Logic: Nations with resonance > 1.0 share 'overflow'
+        with Nations with resonance < 0.5.
+        """
+        donors = [n for n in self.nations.values() if n.resonance > 1.0]
+        recipients = [n for n in self.nations.values() if n.resonance < 0.5]
+
+        for donor in donors:
+            for recipient in recipients:
+                overflow = (donor.resonance - 1.0) * 0.5
+                donor.resonance -= overflow
+                recipient.resonance += overflow
+                print(
+                    f"==> GLOBAL FLOW: {donor.name} sending {round(overflow, 2)} "
+                    f"resonance to {recipient.name}"
+                )
