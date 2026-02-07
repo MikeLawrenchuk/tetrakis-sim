@@ -38,6 +38,7 @@ dev = [
   "ruff>=0.4",
   "black>=24.0",
   "mypy>=1.8",
+  "pre-commit>=3.0",
   "pandas>=2.0",
   "jupyter>=1.0",
   "ipykernel>=6.0",
@@ -54,11 +55,8 @@ plot = [
 [project.scripts]
 tetrakis-sim = "tetrakis_sim.cli:main"
 tetrakis-batch = "tetrakis_sim.batch:main"
-
-
-
-
 tetrakis-eval = "tetrakis_sim.evals.cli:main"
+
 [project.urls]
 Homepage = "https://mikelawrenchuk.github.io/"
 Repository = "https://github.com/MikeLawrenchuk/tetrakis-sim"
@@ -72,3 +70,32 @@ exclude = ["tests*", "docs*", "examples*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+# -----------------------------------------------------------------------------
+# Tooling (Black / Ruff / Mypy)
+# -----------------------------------------------------------------------------
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["notebooks", "geodesic_bending_demo.ipynb"]
+
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tetrakis_sim"]
+
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true

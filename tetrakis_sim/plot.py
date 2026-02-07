@@ -149,7 +149,7 @@ def plot_floor_with_circle(
     # Overlay color by data/amplitude if provided
     if data:
         nodes = list(H.nodes)
-        xs, ys = zip(*[pos[n] for n in nodes])
+        xs, ys = zip(*[pos[n] for n in nodes], strict=False)
         vals = [data.get(n, 0.0) for n in nodes]
         sc = plt.scatter(xs, ys, c=vals, cmap="coolwarm", s=120, zorder=20)
         plt.colorbar(sc, label="Wave amplitude")
@@ -164,7 +164,7 @@ def plot_floor_with_circle(
                 offset = 0.18 * "ABCD".index(q)
                 return (r + offset, c + offset)
 
-            xs, ys = zip(*[raw_node_pos(n) for n in nodes])
+            xs, ys = zip(*[raw_node_pos(n) for n in nodes], strict=False)
             plt.scatter(
                 xs,
                 ys,
@@ -179,7 +179,7 @@ def plot_floor_with_circle(
     if boundary_nodes:
         nodes = [n for n in boundary_nodes if n[2] == z]
         if nodes:
-            xs, ys = zip(*[pos[n] for n in nodes])
+            xs, ys = zip(*[pos[n] for n in nodes], strict=False)
             plt.scatter(
                 xs,
                 ys,
@@ -270,7 +270,7 @@ def plot_lattice(
     nx.draw(H, pos, node_size=60, with_labels=False, alpha=0.7)
     if data:
         # For node coloring, overlay scatter
-        xs, ys = zip(*[pos[n] for n in plot_nodes])
+        xs, ys = zip(*[pos[n] for n in plot_nodes], strict=False)
         colors = [data.get(n, 0.5) for n in plot_nodes]
         plt.scatter(xs, ys, c=colors, cmap="viridis", s=100)
     if title:
@@ -467,7 +467,7 @@ def plot_3d_graph(G, node_size: int = 10, title: str = "3-D graph") -> None:
         _warn_no_matplotlib()
         return None
 
-    xs, ys, zs = zip(*(G.nodes[n]["pos"] for n in G))
+    xs, ys, zs = zip(*(G.nodes[n]["pos"] for n in G), strict=False)
     fig = plt.figure(figsize=(6, 5))
     ax = fig.add_subplot(111, projection="3d")
     ax.scatter(xs, ys, zs, s=node_size)

@@ -110,9 +110,7 @@ def main() -> None:
                 nodes = list(G.nodes)
 
             candidates = [
-                n
-                for n in nodes
-                if G.degree[n] > 0 and not bool(G.nodes[n].get("singular", False))
+                n for n in nodes if G.degree[n] > 0 and not bool(G.nodes[n].get("singular", False))
             ]
             pool = candidates if candidates else nodes
             initial_node = min(pool, key=_distance_sq) if pool else None

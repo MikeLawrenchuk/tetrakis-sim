@@ -23,26 +23,16 @@ Example:
 Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
 """
     )
-    parser.add_argument(
-        "--size", type=int, default=9, help="Lattice width/height (NxN)"
-    )
+    parser.add_argument("--size", type=int, default=9, help="Lattice width/height (NxN)")
     parser.add_argument(
         "--dim", type=int, default=3, choices=[2, 3], help="Lattice dimension (2 or 3)"
     )
-    parser.add_argument(
-        "--layers", type=int, default=5, help="Number of lattice layers (z)"
-    )
+    parser.add_argument("--layers", type=int, default=5, help="Number of lattice layers (z)")
     parser.add_argument("--radius", type=float, default=2.5, help="Black hole radius")
-    parser.add_argument(
-        "--steps", type=int, default=40, help="Number of simulation time steps"
-    )
+    parser.add_argument("--steps", type=int, default=40, help="Number of simulation time steps")
     parser.add_argument("--c", type=float, default=1.0, help="Wave speed (default=1.0)")
-    parser.add_argument(
-        "--dt", type=float, default=0.2, help="Time step size (default=0.2)"
-    )
-    parser.add_argument(
-        "--damping", type=float, default=0.0, help="Wave damping (default=0.0)"
-    )
+    parser.add_argument("--dt", type=float, default=0.2, help="Time step size (default=0.2)")
+    parser.add_argument("--damping", type=float, default=0.0, help="Wave damping (default=0.0)")
     parser.add_argument(
         "--defect_type",
         type=str,
@@ -68,12 +58,8 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
         default=None,
         help="Kick node tuple as a Python literal, e.g. '(10,10,\"A\")' or '(10,10,2,\"A\")'",
     )
-    parser.add_argument(
-        "--sing_mass", type=float, default=1000.0, help="Singularity mass"
-    )
-    parser.add_argument(
-        "--sing_potential", type=float, default=0.0, help="Singularity potential"
-    )
+    parser.add_argument("--sing_mass", type=float, default=1000.0, help="Singularity mass")
+    parser.add_argument("--sing_potential", type=float, default=0.0, help="Singularity potential")
     parser.add_argument(
         "--sing_radius",
         type=float,
@@ -91,8 +77,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     os.makedirs(args.outdir, exist_ok=True)
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     prefix = (
-        args.prefix
-        or f"size{args.size}_radius{args.radius}_layers{args.layers}_steps{args.steps}"
+        args.prefix or f"size{args.size}_radius{args.radius}_layers{args.layers}_steps{args.steps}"
     )
 
     print("== Tetrakis-Sim Batch CLI ==")
@@ -140,9 +125,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
         z = center[2]
         nodes_on_layer = [n for n in G if len(n) > 3 and n[2] == z]
         if not nodes_on_layer:
-            raise RuntimeError(
-                "No nodes remain on the central layer after defect application"
-            )
+            raise RuntimeError("No nodes remain on the central layer after defect application")
     else:
         nodes_on_layer = list(G.nodes)
         if not nodes_on_layer:
@@ -162,9 +145,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     else:
         # Prefer connected, non-singular nodes (avoids degree-0 ramps and avoids kicking the singular point)
         candidates = [
-            n
-            for n in nodes_on_layer
-            if G.degree[n] > 0 and not G.nodes[n].get("singular", False)
+            n for n in nodes_on_layer if G.degree[n] > 0 and not G.nodes[n].get("singular", False)
         ]
         pool = candidates if candidates else nodes_on_layer
         initial_node = min(pool, key=_distance_sq)
@@ -193,9 +174,7 @@ Outputs a plot (PNG), spectrum CSV, and metadata JSON to the output directory.
     plot_filename = os.path.join(args.outdir, f"{prefix}_fft_node{initial_node}.png")
 
     # plot_fft now saves the figure itself; do not call plt.savefig() here
-    plot_fft(
-        freq, spectrum, node=initial_node, values=values, save=plot_filename, show=False
-    )
+    plot_fft(freq, spectrum, node=initial_node, values=values, save=plot_filename, show=False)
 
     print(f"Saved FFT plot to {plot_filename}")
 

@@ -50,9 +50,7 @@ def test_apply_wedge_defect_supports_3d():
 def test_physics_apply_defect_returns_removed_nodes():
     G = build_sheet(size=5, dim=3, layers=3)
     center = (2, 2, 1)
-    _, removed = physics_apply_defect(
-        G, defect_type="blackhole", center=center, radius=1.5
-    )
+    _, removed = physics_apply_defect(G, defect_type="blackhole", center=center, radius=1.5)
 
     assert removed
     for node in removed:

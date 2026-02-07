@@ -33,7 +33,7 @@ def plot_3d_graph_with_edges(G: nx.Graph) -> None:
     # iterate rings so colour can be assigned per ring
     for k in range(N_RINGS):
         verts = [G.nodes[(k, j)]["pos"] for j in range(5)]  # 5 vertices
-        xs, ys, zs = zip(*verts)
+        xs, ys, zs = zip(*verts, strict=False)
 
         # scatter vertices
         ax.scatter(

@@ -98,9 +98,7 @@ def test_singularity_prune_edges_isolates_tagged_nodes_2d():
     )
 
     tagged = list(_tagged_nodes(G, center, radius))
-    assert (
-        tagged
-    ), "Expected at least one tagged node at radius=0 for an on-lattice center."
+    assert tagged, "Expected at least one tagged node at radius=0 for an on-lattice center."
 
     # With prune_edges=True, all tagged nodes should become isolated (degree 0)
     for n in tagged:
@@ -109,9 +107,7 @@ def test_singularity_prune_edges_isolates_tagged_nodes_2d():
 
     e1 = G.number_of_edges()
     assert e1 < e0, "Edge count should decrease when pruning is enabled."
-    assert (e0 - e1) == len(
-        result.removed_edges
-    ), "Removed-edge list should match the edge delta."
+    assert (e0 - e1) == len(result.removed_edges), "Removed-edge list should match the edge delta."
 
     # Every removed edge must touch a tagged node
     tagged_set = set(tagged)
