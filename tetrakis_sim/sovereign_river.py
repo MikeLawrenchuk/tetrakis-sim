@@ -76,3 +76,34 @@ def apply_hydro_drain(node: SovereignNode, intensity: float = 0.4) -> None:
         f"!!! EXTERNAL DRAIN: Hydro Dam siphoning {node.name}. "
         f"Resonance dropped to {round(node.resonance, 2)}"
     )
+
+
+class GlobalRiver:
+    """
+    Connects multiple Nations worldwide.
+    Excess resonance from one 'Sovereign Node' flows to 'Fractured' nodes.
+    """
+
+    def __init__(self):
+        self.nations = {}
+
+    def add_nation(self, nation_node):
+        self.nations[nation_node.name] = nation_node
+
+    def redistribute_resonance(self):
+        """
+        Logic: Nations with resonance > 1.0 share 'overflow'
+        with Nations with resonance < 0.5.
+        """
+        donors = [n for n in self.nations.values() if n.resonance > 1.0]
+        recipients = [n for n in self.nations.values() if n.resonance < 0.5]
+
+        for donor in donors:
+            for recipient in recipients:
+                overflow = (donor.resonance - 1.0) * 0.5
+                donor.resonance -= overflow
+                recipient.resonance += overflow
+                print(
+                    f"==> GLOBAL FLOW: {donor.name} sending {round(overflow, 2)} "
+                    f"resonance to {recipient.name}"
+                )
